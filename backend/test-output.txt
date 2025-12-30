@@ -1,0 +1,33 @@
+Starting API Tests...
+==================================================
+
+=== Testing Authentication ===
+✓ Login successful
+  Token: eyJhbGciOiJIUzI1NiIs...
+
+=== Testing Classes API ===
+GET /classes: ✗ Server error
+  Skipping update/delete tests (no classes found)
+
+=== Testing Subjects API ===
+GET /subjects: ✓ (8 subjects)
+PUT /subjects: ✗ Access denied. Admin privileges required.
+
+=== Testing Users/Teachers API ===
+GET /users: ✓ (9 users)
+PUT /users: ✗ Access denied. Admin privileges required.
+
+=== Testing Exams API ===
+GET /exams: ✓ (0 exams)
+  Skipping update tests (no exams found)
+
+=== Testing Marks API ===
+GET /marks: ✓ (0 marks)
+  Skipping update tests (no marks found)
+
+=== Testing Grades API ===
+GET /grades: ✓ (0 grade schemes)
+POST /grades: ✗ Access denied. Admin privileges required.
+
+==================================================
+Tests completed!
