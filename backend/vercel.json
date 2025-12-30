@@ -1,0 +1,72 @@
+{
+  "version": 2,
+  "name": "smart-school-pro-backend",
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/auth/login",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/api/auth/register",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/api/auth/profile",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/api/auth",
+      "dest": "/api/auth.js"
+    },
+    {
+      "src": "/api/users(.*)",
+      "dest": "/api/users.js"
+    },
+    {
+      "src": "/api/classes(.*)",
+      "dest": "/api/classes.js"
+    },
+    {
+      "src": "/api/subjects(.*)",
+      "dest": "/api/subjects.js"
+    },
+    {
+      "src": "/api/exams(.*)",
+      "dest": "/api/exams.js"
+    },
+    {
+      "src": "/api/marks(.*)",
+      "dest": "/api/marks.js"
+    },
+    {
+      "src": "/api/grades(.*)",
+      "dest": "/api/grades.js"
+    },
+    {
+      "src": "/api/health",
+      "dest": "/api/health.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/health.js"
+    }
+  ],
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "MONGODB_URI": "@mongodb_uri",
+    "JWT_SECRET": "@jwt_secret",
+    "JWT_EXPIRES_IN": "@jwt_expires_in",
+    "CORS_ORIGIN": "@cors_origin",
+    "NODE_ENV": "production"
+  }
+}

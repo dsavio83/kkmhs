@@ -1,0 +1,7 @@
+{
+  "name": "SmartSchool Pro",
+  "description": "A comprehensive school management system for Headmasters, Teachers, and Students featuring AI-powered analysis, automated grading, and extensive reporting.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
