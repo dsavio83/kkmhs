@@ -97,12 +97,17 @@ const updateUser = async (req, res) => {
 
 // @desc    Delete user
 // @route   DELETE /api/users/:id
-// @access  Private (Admin only)
+// @access  Private (Teacher/Admin - Teacher can only delete Students)
 const deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Role safety: Non-admins can only delete STUDENTS
+    if (req.user.role !== 'ADMIN' && user.role !== 'STUDENT') {
+      return res.status(403).json({ message: 'Only admins can delete teachers or other admins' });
     }
 
     await User.findByIdAndDelete(req.params.id);

@@ -43,8 +43,8 @@ router.get('/users/class/:classId', auth, userController.getStudentsByClass);
 router.get('/users/:id', auth, userController.getUserById);
 router.put('/users/:id', auth, teacherAuth, userController.updateUser);
 router.put('/users', auth, teacherAuth, queryToParams('id'), userController.updateUser);
-router.delete('/users/:id', auth, adminAuth, userController.deleteUser);
-router.delete('/users', auth, adminAuth, queryToParams('id'), userController.deleteUser);
+router.delete('/users/:id', auth, teacherAuth, userController.deleteUser);
+router.delete('/users', auth, teacherAuth, queryToParams('id'), userController.deleteUser);
 
 // Class Routes - Support both URL params and query params
 router.get('/classes', auth, (req, res, next) => {

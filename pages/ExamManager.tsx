@@ -352,80 +352,86 @@ const ExamManager: React.FC<ExamManagerProps> = ({ teacher, state, setState }) =
                                 </button>
                               </div>
 
-                              <div className="space-y-2">
+                              <div className="space-y-2 overflow-hidden">
                                 {(config.markSections || []).map((section: any, sIdx: number) => (
-                                  <div key={section.id || section._id || sIdx} className="flex items-center gap-2 group">
+                                  <div key={section.id || section._id || sIdx} className="flex flex-wrap items-center gap-2 p-2 bg-slate-50/50 rounded-xl border border-slate-100 group">
                                     <input
-                                      placeholder="Section Name (e.g. 1 Mark Qns)"
+                                      placeholder="Section Name"
                                       value={section.name}
                                       onChange={(e) => {
                                         const newSections = [...(config.markSections || [])];
                                         newSections[sIdx].name = e.target.value;
                                         setConfigs(configs.map(c => c.subjectId === config.subjectId ? { ...c, markSections: newSections } : c));
                                       }}
-                                      className="flex-1 bg-slate-50 border-none rounded-lg px-3 py-1.5 text-[11px] font-black"
+                                      className="flex-1 min-w-[120px] bg-white border border-slate-100 rounded-lg px-2.5 py-1.5 text-[10px] font-bold outline-none focus:ring-1 focus:ring-blue-400"
                                     />
-                                    <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2">
-                                      <span className="text-[8px] font-black text-slate-400 uppercase">Val</span>
-                                      <input
-                                        type="number"
-                                        step="0.5"
-                                        value={section.markValue}
-                                        onChange={(e) => {
-                                          const newVal = parseFloat(e.target.value) || 0;
-                                          const newSections = [...(config.markSections || [])];
-                                          newSections[sIdx].markValue = newVal;
-                                          // Auto-calculate Max based on Qty
-                                          const qty = newSections[sIdx].qty || 0;
-                                          newSections[sIdx].maxMarks = newVal * qty;
-                                          // Auto-update Name if it's default
-                                          if (!newSections[sIdx].name || newSections[sIdx].name.toLowerCase().includes('mark qns')) {
-                                            newSections[sIdx].name = `${newVal} Mark Qns`;
-                                          }
+
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-1 bg-white border border-slate-100 rounded-lg px-2 py-0.5">
+                                        <span className="text-[7px] font-black text-slate-400 uppercase">Val</span>
+                                        <input
+                                          type="number"
+                                          step="0.5"
+                                          value={section.markValue}
+                                          onChange={(e) => {
+                                            const newVal = parseFloat(e.target.value) || 0;
+                                            const newSections = [...(config.markSections || [])];
+                                            newSections[sIdx].markValue = newVal;
+                                            const qty = newSections[sIdx].qty || 0;
+                                            newSections[sIdx].maxMarks = newVal * qty;
+                                            if (!newSections[sIdx].name || newSections[sIdx].name.toLowerCase().includes('mark qns')) {
+                                              newSections[sIdx].name = `${newVal} Mark Qns`;
+                                            }
+                                            setConfigs(configs.map(c => c.subjectId === config.subjectId ? { ...c, markSections: newSections } : c));
+                                          }}
+                                          className="w-8 bg-transparent border-none py-1 text-[10px] font-black text-center outline-none"
+                                        />
+                                      </div>
+
+                                      <div className="flex items-center gap-1 bg-white border border-slate-100 rounded-lg px-2 py-0.5">
+                                        <span className="text-[7px] font-black text-slate-400 uppercase">Qty</span>
+                                        <input
+                                          type="number"
+                                          value={section.qty || (section.markValue > 0 ? section.maxMarks / section.markValue : 0)}
+                                          onChange={(e) => {
+                                            const newQty = parseInt(e.target.value) || 0;
+                                            const newSections = [...(config.markSections || [])];
+                                            newSections[sIdx].qty = newQty;
+                                            newSections[sIdx].maxMarks = (newSections[sIdx].markValue || 1) * newQty;
+                                            setConfigs(configs.map(c => c.subjectId === config.subjectId ? { ...c, markSections: newSections } : c));
+                                          }}
+                                          className="w-8 bg-transparent border-none py-1 text-[10px] font-black text-center text-blue-600 outline-none"
+                                        />
+                                      </div>
+
+                                      <div className="flex items-center gap-1 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5 min-w-[40px] justify-center">
+                                        <span className="text-[9px] font-black text-blue-700">{section.maxMarks}</span>
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newSections = (config.markSections || []).filter((_: any, i: number) => i !== sIdx);
                                           setConfigs(configs.map(c => c.subjectId === config.subjectId ? { ...c, markSections: newSections } : c));
                                         }}
-                                        className="w-10 bg-transparent border-none py-1.5 text-xs font-bold text-center"
-                                      />
+                                        className="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-slate-50 rounded-lg px-2">
-                                      <span className="text-[8px] font-black text-slate-400 uppercase">Qty</span>
-                                      <input
-                                        type="number"
-                                        value={section.qty || (section.markValue > 0 ? section.maxMarks / section.markValue : 0)}
-                                        onChange={(e) => {
-                                          const newQty = parseInt(e.target.value) || 0;
-                                          const newSections = [...(config.markSections || [])];
-                                          newSections[sIdx].qty = newQty;
-                                          newSections[sIdx].maxMarks = (newSections[sIdx].markValue || 1) * newQty;
-                                          setConfigs(configs.map(c => c.subjectId === config.subjectId ? { ...c, markSections: newSections } : c));
-                                        }}
-                                        className="w-10 bg-transparent border-none py-1.5 text-xs font-bold text-center text-blue-600"
-                                      />
-                                    </div>
-                                    <div className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 min-w-[50px]">
-                                      <span className="text-[8px] font-black text-slate-400 uppercase">Max</span>
-                                      <span className="px-1 text-xs font-black text-blue-700">{section.maxMarks}</span>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newSections = (config.markSections || []).filter((_: any, i: number) => i !== sIdx);
-                                        setConfigs(configs.map(c => c.subjectId === config.subjectId ? { ...c, markSections: newSections } : c));
-                                      }}
-                                      className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
                                   </div>
                                 ))}
+
                                 {(config.markSections || []).length > 0 && (
-                                  <div className="flex justify-end pt-1 pr-12">
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                      Total Detailed: {(config.markSections || []).reduce((acc: number, s: any) => acc + s.maxMarks, 0)}
-                                      {(config.markSections || []).reduce((acc: number, s: any) => acc + s.maxMarks, 0) > config.maxTe &&
-                                        <span className="ml-2 text-red-500">(! Exceeds TE)</span>
-                                      }
-                                    </span>
+                                  <div className="flex justify-end pt-2 pr-2">
+                                    <div className="bg-slate-100/50 px-3 py-1 rounded-full border border-slate-100">
+                                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+                                        Detailed Total: <span className="text-blue-600">{(config.markSections || []).reduce((acc: number, s: any) => acc + s.maxMarks, 0)}</span>
+                                        {(config.markSections || []).reduce((acc: number, s: any) => acc + s.maxMarks, 0) > config.maxTe &&
+                                          <span className="ml-2 text-red-500 font-black italic">(! Exceeds TE)</span>
+                                        }
+                                      </span>
+                                    </div>
                                   </div>
                                 )}
                               </div>

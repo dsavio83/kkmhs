@@ -10,213 +10,227 @@ interface ReportsProps {
     state: any;
 }
 
-// --- Helper Components ---
+// --- Helper Functions ---
+const getAcademicYear = () => {
+    const now = new Date();
+    const month = now.getMonth(); // 0-11
+    const year = now.getFullYear();
 
-const SignatureLine = ({ label, name }: { label: string, name?: string }) => (
-    <div className="flex flex-col items-center justify-end min-w-[100px]" style={{ width: '100%' }}>
-        {name && <span className="text-[10px] font-black text-black uppercase mb-1 font-serif">{name}</span>}
-        <div className="w-full border-b-[1.5px] border-black mb-1"></div>
-        <span className="text-[9px] font-black text-black uppercase tracking-wider">{label}</span>
-    </div>
-);
+    // Jan (0) to May (4) -> (Year-1) - (Year)
+    // June (5) to Dec (11) -> (Year) - (Year+1)
+    if (month >= 0 && month <= 4) {
+        return `${year - 1}-${year}`;
+    } else {
+        return `${year}-${year + 1}`;
+    }
+};
 
 // --- Progress Card Component (A4 Portrait - Professional Design) ---
 // --- Progress Card Component (A4 Portrait - Academic Standard) ---
 const ProgressCardA4: React.FC<{ data: any, selectedExam: any, selectedClass: any, settings: any, schoolDetails: any, classTeacher: any }> = ({
     data, selectedExam, selectedClass, settings, schoolDetails, classTeacher
-}) => (
-    <div className="progress-card-item bg-white mx-auto print:mx-0 mb-12 print:mb-0 relative box-border text-black transition-all"
-        style={{ width: '210mm', minHeight: '297mm', breakAfter: 'page', pageBreakAfter: 'always', padding: '15mm' }}>
+}) => {
+    const academicYear = getAcademicYear();
+    return (
+        <div className="progress-card-item bg-white mx-auto print:mx-0 mb-12 print:mb-0 relative box-border text-black transition-all"
+            style={{ width: '210mm', minHeight: '297mm', breakAfter: 'page', pageBreakAfter: 'always', padding: '15mm' }}>
 
-        <div className="flex flex-col min-h-full font-sans" style={{ lineHeight: '1.4' }}>
-            {/* Header Section */}
-            <div className="text-center w-full mb-6">
-                <h1 style={{ fontSize: '1.6rem', fontWeight: 800, textTransform: 'uppercase', color: '#000', margin: '0 0 2px 0' }}>
-                    {schoolDetails?.name || 'SMART SCHOOL'}
-                </h1>
-                <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#000', margin: '0 0 12px 0' }}>
-                    {schoolDetails?.place || 'CHENNAI'}
-                </h2>
+            <div className="flex flex-col min-h-full font-sans" style={{ lineHeight: '1.4' }}>
+                {/* Header Section */}
+                <div className="text-center w-full mb-6">
+                    <h1 style={{ fontSize: '1.6rem', fontWeight: 800, textTransform: 'uppercase', color: '#000', margin: '0 0 2px 0' }}>
+                        {schoolDetails?.name || 'SMART SCHOOL'}
+                    </h1>
+                    <h2 style={{ fontSize: '13px', fontWeight: 700, color: '#000', margin: '0 0 12px 0' }}>
+                        {schoolDetails?.place || 'CHENNAI'}
+                    </h2>
 
-                <div className="flex items-center justify-center w-full mb-4">
+                    <div className="flex items-center justify-center w-full mb-4">
+                        <div className="flex-1 h-[1px] bg-[#000]"></div>
+                        <span className="px-6 text-[14px] font-bold italic text-[#000] uppercase tracking-widest">
+                            PROGRESS REPORT
+                        </span>
+                        <div className="flex-1 h-[1px] bg-[#000]"></div>
+                    </div>
+
+                    <div className="text-[12px] font-bold text-[#dc2626] uppercase tracking-wider">
+                        Academic Year {academicYear} &bull; {selectedExam?.name || 'ANNUAL EXAMINATION'}
+                    </div>
+                </div>
+
+                {/* Student Info Table - Robust Structure */}
+                <div className="w-full mb-8">
+                    <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', fontSize: '14px', tableLayout: 'fixed' }}>
+                        <tbody>
+                            <tr style={{ height: '45px' }}>
+                                <td style={{ width: '18%', padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Student Name</td>
+                                <td style={{ width: '32%', padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', textTransform: 'uppercase', verticalAlign: 'middle' }}>{data.student.name}</td>
+                                <td style={{ width: '18%', padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Admission No</td>
+                                <td style={{ width: '32%', padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', verticalAlign: 'middle' }}>{data.student.admissionNo}</td>
+                            </tr>
+                            <tr style={{ height: '45px' }}>
+                                <td style={{ padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Class & Div</td>
+                                <td style={{ padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', verticalAlign: 'middle' }}>{selectedClass?.gradeLevel} - {selectedClass?.section}</td>
+                                <td style={{ padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Date of Birth</td>
+                                <td style={{ padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', verticalAlign: 'middle' }}>{data.student.dob ? new Date(data.student.dob).toLocaleDateString() : '-'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Main Marks Table - Enhanced Spacing */}
+                <div className="w-full mb-8">
+                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', border: '2px solid #000' }}>
+                        <thead>
+                            <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #000' }}>
+                                <th style={{ borderRight: '1.5px solid #000', width: '35%', textAlign: 'left', padding: '15px 18px', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>SUBJECT DOMAIN</th>
+                                {settings.showTe && <th style={{ borderRight: '1.5px solid #000', width: '12%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>T.E</th>}
+                                {settings.showCe && <th style={{ borderRight: '1.5px solid #000', width: '12%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>C.E</th>}
+                                {settings.showTotal && <th style={{ borderRight: '1.5px solid #000', width: '18%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>TOTAL</th>}
+                                {settings.showPercentage && <th style={{ borderRight: '1.5px solid #000', width: '10%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>%</th>}
+                                {settings.showGrade && <th style={{ width: '13%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>GRADE</th>}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.subjects.map((sub: any) => (
+                                <tr key={sub.id} style={{ borderBottom: '1.5px solid #000' }}>
+                                    <td style={{ borderRight: '1.5px solid #000', padding: '12px 18px', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
+                                        {sub.name}
+                                    </td>
+                                    {settings.showTe && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
+                                        {sub.teStr !== '-' ? sub.teStr : '0'}
+                                    </td>}
+                                    {settings.showCe && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
+                                        {sub.ceStr !== '-' ? sub.ceStr : '0'}
+                                    </td>}
+                                    {settings.showTotal && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
+                                        {sub.teStr === 'A' ? 'A' : `${sub.total || 0} / ${sub.max || 0}`}
+                                    </td>}
+                                    {settings.showPercentage && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
+                                        {sub.teStr === 'A' ? '-' : `${Math.round(sub.percent || 0)}%`}
+                                    </td>}
+                                    {settings.showGrade && <td style={{ textAlign: 'center', fontWeight: 900, fontSize: '14px', verticalAlign: 'middle' }}>
+                                        {sub.teStr === 'A' ? 'A' : (sub.total > 0 ? sub.grade : '-')}
+                                    </td>}
+                                </tr>
+                            ))}
+                            {/* Consolidated Performance Row */}
+                            <tr style={{ backgroundColor: '#f1f5f9' }}>
+                                <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 900, fontSize: '13px', verticalAlign: 'middle', padding: '15px 0' }}>
+                                    CONSOLIDATED PERFORMANCE
+                                </td>
+                                <td style={{ borderRight: '1.5px solid #000' }} colSpan={(settings.showTe ? 1 : 0) + (settings.showCe ? 1 : 0)}></td>
+                                <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 900, fontSize: '13px', verticalAlign: 'middle' }}>
+                                    {data.grandTotal > 0 ? `${data.grandTotal} / ${data.maxTotal}` : '-'}
+                                </td>
+                                <td style={{ borderRight: '1.5px solid #000' }}></td>
+                                <td style={{ textAlign: 'center', fontWeight: 900, fontSize: '16px', verticalAlign: 'middle' }}>
+                                    {data.grandTotal > 0 ? data.grade : '-'}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Results Summary and Attendance Line */}
+                <div className="flex justify-between items-center w-full px-2 mb-4" style={{ fontWeight: 700, fontSize: '10px', borderBottom: '1px solid #000', paddingBottom: '8px' }}>
+                    <div style={{ display: 'flex', gap: '20px' }}>
+                        {data.grandTotal > 0 ? (
+                            <>
+                                <span>RESULT: {data.result}</span>
+                                <span>PERCENTAGE: {data.percentage.toFixed(2)}%</span>
+                                <span>CLASS RANK: #{data.rank}</span>
+                            </>
+                        ) : (
+                            <span className="italic opacity-50">Results pending / Marks not entered</span>
+                        )}
+                    </div>
+                    <div style={{ fontWeight: 600 }}>
+                        Attendance: {data.attendance ? `${data.attendance}% Overall Attendance` : 'N/A'}
+                    </div>
+                </div>
+
+                {/* Signature Block - Flex Div Layout */}
+                <div className="flex justify-between w-full mb-8 pt-4">
+                    <div className="flex flex-col items-center" style={{ width: '30%' }}>
+                        <div style={{ fontWeight: 600, fontSize: '11.5px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{classTeacher?.name}</div>
+                        <div style={{ width: '100%', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>Class Teacher</div>
+                    </div>
+                    <div className="flex flex-col items-center" style={{ width: '30%' }}>
+                        <div style={{ height: '22px' }}></div>
+                        <div style={{ width: '100%', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>Parent Signature</div>
+                    </div>
+                    <div className="flex flex-col items-center" style={{ width: '30%' }}>
+                        <div style={{ height: '22px' }}></div>
+                        <div style={{ width: '100%', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>Headmaster</div>
+                    </div>
+                </div>
+
+                {/* Performance Analysis starts here (Continuous) */}
+                <div className="w-full flex items-center justify-center mb-6 mt-4">
                     <div className="flex-1 h-[1px] bg-[#000]"></div>
-                    <span className="px-6 text-[14px] font-bold italic text-[#000] uppercase tracking-widest">
-                        PROGRESS REPORT
+                    <span className="px-6 text-[14px] font-bold italic text-[#000] tracking-tight">
+                        Performance Analysis for {data.student.name}
                     </span>
                     <div className="flex-1 h-[1px] bg-[#000]"></div>
                 </div>
 
-                <div className="text-[12px] font-bold text-[#dc2626] uppercase tracking-wider">
-                    Academic Year 2025-2026 &bull; {selectedExam?.name || 'ANNUAL EXAMINATION'}
-                </div>
-            </div>
-
-            {/* Student Info Table - Robust Structure */}
-            <div className="w-full mb-8">
-                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #000', fontSize: '14px', tableLayout: 'fixed' }}>
-                    <tbody>
-                        <tr style={{ height: '45px' }}>
-                            <td style={{ width: '18%', padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Student Name</td>
-                            <td style={{ width: '32%', padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', textTransform: 'uppercase', verticalAlign: 'middle' }}>{data.student.name}</td>
-                            <td style={{ width: '18%', padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Admission No</td>
-                            <td style={{ width: '32%', padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', verticalAlign: 'middle' }}>{data.student.admissionNo}</td>
-                        </tr>
-                        <tr style={{ height: '45px' }}>
-                            <td style={{ padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Class & Div</td>
-                            <td style={{ padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', verticalAlign: 'middle' }}>{selectedClass?.gradeLevel} - {selectedClass?.section}</td>
-                            <td style={{ padding: '8px 12px', fontWeight: 600, border: '1.2px solid #000', backgroundColor: '#f8fafc', verticalAlign: 'middle' }}>Date of Birth</td>
-                            <td style={{ padding: '8px 12px', fontWeight: 700, border: '1.2px solid #000', verticalAlign: 'middle' }}>{data.student.dob ? new Date(data.student.dob).toLocaleDateString() : '-'}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Main Marks Table - Enhanced Spacing */}
-            <div className="w-full mb-8">
-                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', border: '2px solid #000' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '2px solid #000' }}>
-                            <th style={{ borderRight: '1.5px solid #000', width: '35%', textAlign: 'left', padding: '15px 18px', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>SUBJECT DOMAIN</th>
-                            {settings.showTe && <th style={{ borderRight: '1.5px solid #000', width: '12%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>T.E</th>}
-                            {settings.showCe && <th style={{ borderRight: '1.5px solid #000', width: '12%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>C.E</th>}
-                            {settings.showTotal && <th style={{ borderRight: '1.5px solid #000', width: '18%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>TOTAL</th>}
-                            {settings.showPercentage && <th style={{ borderRight: '1.5px solid #000', width: '10%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>%</th>}
-                            {settings.showGrade && <th style={{ width: '13%', textAlign: 'center', fontWeight: 900, fontSize: '12px', verticalAlign: 'middle' }}>GRADE</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {data.subjects.map((sub: any) => (
-                            <tr key={sub.id} style={{ borderBottom: '1.5px solid #000' }}>
-                                <td style={{ borderRight: '1.5px solid #000', padding: '12px 18px', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
-                                    {sub.name}
-                                </td>
-                                {settings.showTe && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
-                                    {sub.teStr !== '-' ? sub.teStr : '0'}
-                                </td>}
-                                {settings.showCe && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
-                                    {sub.ceStr !== '-' ? sub.ceStr : '0'}
-                                </td>}
-                                {settings.showTotal && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
-                                    {sub.total || 0} / {sub.max || 0}
-                                </td>}
-                                {settings.showPercentage && <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 700, fontSize: '13px', verticalAlign: 'middle' }}>
-                                    {Math.round(sub.percent || 0)}%
-                                </td>}
-                                {settings.showGrade && <td style={{ textAlign: 'center', fontWeight: 900, fontSize: '14px', verticalAlign: 'middle' }}>
-                                    {sub.grade || '-'}
-                                </td>}
-                            </tr>
-                        ))}
-                        {/* Consolidated Performance Row */}
-                        <tr style={{ backgroundColor: '#f1f5f9' }}>
-                            <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 900, fontSize: '13px', verticalAlign: 'middle', padding: '15px 0' }}>
-                                CONSOLIDATED PERFORMANCE
-                            </td>
-                            <td style={{ borderRight: '1.5px solid #000' }} colSpan={(settings.showTe ? 1 : 0) + (settings.showCe ? 1 : 0)}></td>
-                            <td style={{ borderRight: '1.5px solid #000', textAlign: 'center', fontWeight: 900, fontSize: '13px', verticalAlign: 'middle' }}>
-                                {data.grandTotal} / {data.maxTotal}
-                            </td>
-                            <td style={{ borderRight: '1.5px solid #000' }}></td>
-                            <td style={{ textAlign: 'center', fontWeight: 900, fontSize: '16px', verticalAlign: 'middle' }}>
-                                {data.grade}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Results Summary and Attendance Line */}
-            <div className="flex justify-between items-center w-full px-2 mb-4" style={{ fontWeight: 700, fontSize: '10px', borderBottom: '1px solid #000', paddingBottom: '8px' }}>
-                <div style={{ display: 'flex', gap: '20px' }}>
-                    <span>RESULT: {data.result}</span>
-                    <span>PERCENTAGE: {data.percentage.toFixed(2)}%</span>
-                    <span>CLASS RANK: #{data.rank}</span>
-                </div>
-                <div style={{ fontWeight: 600 }}>
-                    Attendance: {data.attendance ? `${data.attendance}% Overall Attendance` : 'N/A'}
-                </div>
-            </div>
-
-            {/* Signature Block - Flex Div Layout */}
-            <div className="flex justify-between w-full mb-8 pt-4">
-                <div className="flex flex-col items-center" style={{ width: '30%' }}>
-                    <div style={{ fontWeight: 600, fontSize: '11.5px', marginBottom: '4px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{classTeacher?.name}</div>
-                    <div style={{ width: '100%', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>Class Teacher</div>
-                </div>
-                <div className="flex flex-col items-center" style={{ width: '30%' }}>
-                    <div style={{ height: '22px' }}></div>
-                    <div style={{ width: '100%', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>Parent Signature</div>
-                </div>
-                <div className="flex flex-col items-center" style={{ width: '30%' }}>
-                    <div style={{ height: '22px' }}></div>
-                    <div style={{ width: '100%', borderTop: '1px solid #000', paddingTop: '4px', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>Headmaster</div>
-                </div>
-            </div>
-
-            {/* Performance Analysis starts here (Continuous) */}
-            <div className="w-full flex items-center justify-center mb-6 mt-4">
-                <div className="flex-1 h-[1px] bg-[#000]"></div>
-                <span className="px-6 text-[14px] font-bold italic text-[#000] tracking-tight">
-                    Performance Analysis for {data.student.name}
-                </span>
-                <div className="flex-1 h-[1px] bg-[#000]"></div>
-            </div>
-
-            <div className="space-y-6">
-                {(data.allAdvices || []).map((adv: any, idx: number) => (
-                    <div key={idx} style={{ paddingLeft: '12px', borderLeft: '2.5px solid #000', marginBottom: '20px' }}>
-                        <div className="flex justify-between items-center mb-2">
-                            <span style={{ fontWeight: 700, fontSize: '13px', textTransform: 'uppercase' }}>{adv.subject}</span>
-                            <div style={{ fontWeight: 700, fontSize: '10px' }}>
-                                SCORE: {adv.total} / {adv.max} ({adv.percent.toFixed(0)}%)
-                                <span style={{ marginLeft: '12px', fontSize: '12px' }}>{adv.grade || '-'}</span>
+                <div className="space-y-6">
+                    {(data.allAdvices || []).map((adv: any, idx: number) => (
+                        <div key={idx} style={{ paddingLeft: '12px', borderLeft: '2.5px solid #000', marginBottom: '20px' }}>
+                            <div className="flex justify-between items-center mb-2">
+                                <span style={{ fontWeight: 700, fontSize: '13px', textTransform: 'uppercase' }}>{adv.subject}</span>
+                                <div style={{ fontWeight: 700, fontSize: '10px' }}>
+                                    SCORE: {adv.total > 0 ? `${adv.total} / ${adv.max} (${adv.percent.toFixed(0)}%)` : '-'}
+                                    <span style={{ marginLeft: '12px', fontSize: '12px' }}>{adv.total > 0 ? adv.grade : '-'}</span>
+                                </div>
                             </div>
+
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', marginBottom: '8px', border: '1px solid #000', tableLayout: 'fixed' }}>
+                                <thead>
+                                    <tr style={{ height: '30px', backgroundColor: '#f3f4f6' }}>
+                                        {adv.sections.map((s: any, sIdx: number) => (
+                                            <th key={sIdx} style={{ border: '1px solid #000', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', verticalAlign: 'middle' }}>
+                                                <div style={{ minHeight: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.markValue} Marks</div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style={{ height: '32px' }}>
+                                        {adv.sections.map((s: any, sIdx: number) => (
+                                            <td key={sIdx} style={{ border: '1px solid #000', padding: '0', verticalAlign: 'middle' }}>
+                                                <table style={{ width: '100%', height: '32px', borderCollapse: 'collapse' }}>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style={{ borderRight: '1px solid #e2e8f0', width: '33%', fontWeight: 500, fontSize: '9px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                                <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.max}</div>
+                                                            </td>
+                                                            <td style={{ borderRight: '1px solid #e2e8f0', width: '34%', fontWeight: 600, fontSize: '10px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                                <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.obt}</div>
+                                                            </td>
+                                                            <td style={{ width: '33%', fontWeight: 500, fontSize: '8px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                                <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.percent.toFixed(0)}%</div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        ))}
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <p className="text-[10px] font-medium leading-relaxed px-1 report-multilingual" style={{ color: '#334155' }}>
+                                {adv.advice || adv.analysis || "Consistently follow practice activities to improve scores."}
+                            </p>
                         </div>
-
-                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', marginBottom: '8px', border: '1px solid #000', tableLayout: 'fixed' }}>
-                            <thead>
-                                <tr style={{ height: '30px', backgroundColor: '#f3f4f6' }}>
-                                    {adv.sections.map((s: any, sIdx: number) => (
-                                        <th key={sIdx} style={{ border: '1px solid #000', fontWeight: 700, fontSize: '9px', textTransform: 'uppercase', verticalAlign: 'middle' }}>
-                                            <div style={{ minHeight: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.markValue} Units</div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr style={{ height: '32px' }}>
-                                    {adv.sections.map((s: any, sIdx: number) => (
-                                        <td key={sIdx} style={{ border: '1px solid #000', padding: '0', verticalAlign: 'middle' }}>
-                                            <table style={{ width: '100%', height: '32px', borderCollapse: 'collapse' }}>
-                                                <tbody>
-                                                    <tr>
-                                                        <td style={{ borderRight: '1px solid #e2e8f0', width: '33%', fontWeight: 500, fontSize: '9px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.max}</div>
-                                                        </td>
-                                                        <td style={{ borderRight: '1px solid #e2e8f0', width: '34%', fontWeight: 600, fontSize: '10px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.obt}</div>
-                                                        </td>
-                                                        <td style={{ width: '33%', fontWeight: 500, fontSize: '8px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                            <div style={{ height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{s.percent.toFixed(0)}%</div>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </td>
-                                    ))}
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <p className="text-[10px] font-medium leading-relaxed px-1 report-multilingual" style={{ color: '#334155' }}>
-                            {adv.advice || adv.analysis || "Consistently follow practice activities to improve scores."}
-                        </p>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 
 // --- NEW DEFINITIONS FOR CONSOLIDATED REPORT ---
@@ -265,21 +279,21 @@ const StudentMarksTable = ({ students, startIndex = 0, selectedExam, state, orie
             <thead>
                 <tr className="text-black uppercase font-black" style={{ backgroundColor: '#ffffff', WebkitPrintColorAdjust: 'exact', height: '40px' }}>
                     <th style={{ border: '1px solid #000', width: '30px' }}><RenderCell>SL NO</RenderCell></th>
-                    <th style={{ border: '1px solid #000', minWidth: '250px' }}><RenderCell className="name">STUDENT NAME</RenderCell></th>
+                    <th style={{ border: '1px solid #000', minWidth: '180px' }}><RenderCell className="name">STUDENT NAME</RenderCell></th>
                     {selectedExam.subjectConfigs.map((config: any) => {
                         const configSubId = getIdResilient(config.subjectId);
                         const sub = state.subjects.find((s: any) => (s.id || s._id) === configSubId);
-                        const label = sub?.name?.substring(0, 3).toUpperCase() || 'SUB';
+                        const label = sub?.shortCode || sub?.name?.substring(0, 3).toUpperCase() || 'SUB';
                         return (
-                            <th key={configSubId} style={{ border: '1px solid #000', width: '32px' }}>
-                                <RenderCell className="font-black text-[8px]">{label}</RenderCell>
+                            <th key={configSubId} style={{ border: '1px solid #000', width: '35px' }}>
+                                <RenderCell className="font-black text-[9px]">{label}</RenderCell>
                             </th>
                         );
                     })}
-                    <th style={{ border: '1px solid #000', width: '40px' }}><RenderCell>TOTAL</RenderCell></th>
-                    <th style={{ border: '1px solid #000', width: '35px' }}><RenderCell>GRADE</RenderCell></th>
-                    <th style={{ border: '1px solid #000', width: '32px' }}><RenderCell>%</RenderCell></th>
-                    <th style={{ border: '1px solid #000', width: '32px' }}><RenderCell>RANK</RenderCell></th>
+                    {state.consolidatedSettings?.showTotal && <th style={{ border: '1px solid #000', width: '45px' }}><RenderCell>TOTAL</RenderCell></th>}
+                    {state.consolidatedSettings?.showGrade && <th style={{ border: '1px solid #000', width: '35px' }}><RenderCell>GRADE</RenderCell></th>}
+                    {state.consolidatedSettings?.showPercentage && <th style={{ border: '1px solid #000', width: '35px' }}><RenderCell>%</RenderCell></th>}
+                    {state.consolidatedSettings?.showRank && <th style={{ border: '1px solid #000', width: '35px' }}><RenderCell>RANK</RenderCell></th>}
                 </tr>
             </thead>
             <tbody>
@@ -289,7 +303,7 @@ const StudentMarksTable = ({ students, startIndex = 0, selectedExam, state, orie
                             <RenderCell className="font-bold">{startIndex + idx + 1}</RenderCell>
                         </td>
                         <td style={{ border: '1px solid #000' }}>
-                            <RenderCell className="name font-black text-[10px] uppercase">{data.student.name}</RenderCell>
+                            <RenderCell className="name font-black text-[10px] uppercase truncate" style={{ width: '180px' }}>{data.student.name}</RenderCell>
                         </td>
                         {selectedExam.subjectConfigs.map((config: any) => {
                             const configSubId = getIdResilient(config.subjectId);
@@ -297,30 +311,42 @@ const StudentMarksTable = ({ students, startIndex = 0, selectedExam, state, orie
                             return (
                                 <td key={configSubId} style={{ border: '1px solid #000' }}>
                                     <RenderCell>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '0px' }}>
-                                            <div style={{ fontWeight: 900, fontSize: '10px', color: '#000', lineHeight: '1' }}>
-                                                {subResult?.total !== undefined && !isNaN(subResult.total) ? subResult.total : '-'}
-                                            </div>
-                                            <div style={{ fontSize: '8px', color: '#000', fontWeight: '900', lineHeight: '1', marginTop: '2px' }}>
-                                                {subResult?.grade || '-'}
-                                            </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1px' }}>
+                                            {(displayMode === 'marks' || displayMode === 'both') && (
+                                                <div style={{ fontWeight: 900, fontSize: '10px', color: '#000', lineHeight: '1' }}>
+                                                    {subResult?.teStr === 'A' ? 'A' : (subResult?.total !== undefined && !isNaN(subResult.total) ? subResult.total : '-')}
+                                                </div>
+                                            )}
+                                            {(displayMode === 'grade' || displayMode === 'both') && (
+                                                <div style={{ fontSize: '8px', color: '#000', fontWeight: '900', lineHeight: '1' }}>
+                                                    {subResult?.teStr === 'A' ? 'A' : (subResult?.total > 0 ? subResult.grade : '-')}
+                                                </div>
+                                            )}
                                         </div>
                                     </RenderCell>
                                 </td>
                             );
                         })}
-                        <td style={{ border: '1px solid #000' }}>
-                            <RenderCell className="font-black text-[10px]">{!isNaN(data.grandTotal) ? data.grandTotal : '-'}</RenderCell>
-                        </td>
-                        <td style={{ border: '1px solid #000' }}>
-                            <RenderCell className="font-black text-[10px]">{data.grade}</RenderCell>
-                        </td>
-                        <td style={{ border: '1px solid #000' }}>
-                            <RenderCell className="font-bold">{!isNaN(data.percentage) ? `${data.percentage.toFixed(0)}%` : '-'}</RenderCell>
-                        </td>
-                        <td style={{ border: '1px solid #000' }}>
-                            <RenderCell className="font-bold">{startIndex + idx + 1}</RenderCell>
-                        </td>
+                        {state.consolidatedSettings?.showTotal && (
+                            <td style={{ border: '1px solid #000' }}>
+                                <RenderCell className="font-black text-[10px]">{data.grandTotal > 0 ? data.grandTotal : '-'}</RenderCell>
+                            </td>
+                        )}
+                        {state.consolidatedSettings?.showGrade && (
+                            <td style={{ border: '1px solid #000' }}>
+                                <RenderCell className="font-black text-[10px]">{data.grandTotal > 0 ? data.grade : '-'}</RenderCell>
+                            </td>
+                        )}
+                        {state.consolidatedSettings?.showPercentage && (
+                            <td style={{ border: '1px solid #000' }}>
+                                <RenderCell className="font-bold">{data.grandTotal > 0 && !isNaN(data.percentage) ? `${data.percentage.toFixed(0)}%` : '-'}</RenderCell>
+                            </td>
+                        )}
+                        {state.consolidatedSettings?.showRank && (
+                            <td style={{ border: '1px solid #000' }}>
+                                <RenderCell className="font-bold">{data.grandTotal > 0 ? data.rank : '-'}</RenderCell>
+                            </td>
+                        )}
                     </tr>
                 ))}
             </tbody>
@@ -396,18 +422,18 @@ const CategoryStatsTable = ({ categoryStats }: any) => (
 );
 
 const ReportPageContent = ({ title, selectedExam, selectedClass, state, classTeacher, academicYear, children }: any) => (
-    <div className="report-content-wrapper font-serif">
+    <div className="report-content-wrapper font-sans text-black" style={{ fontFamily: '"Noto Sans", sans-serif' }}>
         {/* Header Section */}
         <div className="school-header text-center mb-6 py-4">
-            <h1 style={{ fontSize: '2.4rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#000', lineHeight: '1.1', marginBottom: '4px' }}>
+            <h1 style={{ fontSize: '2.4rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', color: '#000', lineHeight: '1.1', marginBottom: '4px', fontFamily: '"Noto Sans", sans-serif' }}>
                 {state.schoolDetails?.name || 'SMART SCHOOL'}
             </h1>
-            <p style={{ fontSize: '14px', fontWeight: 900, color: '#000', textTransform: 'uppercase', letterSpacing: '0.4em', fontStyle: 'italic', marginBottom: '24px' }}>
+            <p style={{ fontSize: '14px', fontWeight: 900, color: '#000', textTransform: 'uppercase', letterSpacing: '0.4em', fontStyle: 'italic', marginBottom: '24px', fontFamily: '"Noto Sans", sans-serif' }}>
                 {state.schoolDetails?.place || 'CHENNAI'}
             </p>
             {title && (
                 <div className="flex justify-center">
-                    <div style={{ padding: '6px 40px', border: '1px solid #000', color: '#000', fontWeight: 900, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase', display: 'inline-block', minWidth: '300px' }}>
+                    <div style={{ padding: '6px 40px', border: '1px solid #000', color: '#000', fontWeight: 900, fontSize: '14px', letterSpacing: '0.1em', textTransform: 'uppercase', display: 'inline-block', minWidth: '300px', fontFamily: '"Noto Sans", sans-serif' }}>
                         {selectedExam?.name || 'EXAMINATION'} - {title}
                     </div>
                 </div>
@@ -416,10 +442,10 @@ const ReportPageContent = ({ title, selectedExam, selectedClass, state, classTea
         </div>
 
         {/* Info Line */}
-        <div className="flex justify-between items-center mb-4 text-[8px] font-black uppercase tracking-widest text-slate-500 border-b border-slate-100 pb-2">
-            <div>Class: <span className="text-slate-900 ml-1">{selectedClass?.name} - {selectedClass?.section}</span></div>
-            <div>Academic Year: <span className="text-slate-900 ml-1">{academicYear}</span></div>
-            <div>Generated On: <span className="text-slate-900 ml-1">{new Date().toLocaleDateString()}</span></div>
+        <div className="flex justify-between items-center mb-6 text-[12px] font-black uppercase tracking-tight text-black border-b-[1.5px] border-black pb-3">
+            <div>Class: <span className="ml-1 text-black font-black">{selectedClass?.name} - {selectedClass?.section}</span></div>
+            <div>Academic Year: <span className="ml-1 font-black">{academicYear}</span></div>
+            <div>Generated On: <span className="ml-1 font-black">{new Date().toLocaleDateString()}</span></div>
         </div>
 
         {/* Content Area */}
@@ -439,43 +465,43 @@ const ConsolidatedSubjectAnalysisTable = ({ subjectAnalysis, grades, examName }:
         </div>
 
         <div className="overflow-x-visible border-[1.5px] border-black bg-white">
-            <table className="text-[10px] border-collapse" style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%' }}>
+            <table className="text-[10px] border-collapse" style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: '100%', fontFamily: '"Noto Sans", sans-serif' }}>
                 <colgroup>
-                    <col style={{ width: '30px' }} /> {/* Sl */}
-                    <col style={{ width: 'auto' }} /> {/* Subject - Dynamic remaining space */}
+                    <col style={{ width: '40px' }} /> {/* Sl */}
+                    <col style={{ width: 'auto' }} /> {/* Subject */}
                     {grades.map((_: any, i: number) => (
                         <React.Fragment key={i}>
-                            <col style={{ width: '22px' }} /> {/* B */}
-                            <col style={{ width: '22px' }} /> {/* G */}
+                            <col style={{ width: '25px' }} /> {/* B */}
+                            <col style={{ width: '25px' }} /> {/* G */}
                         </React.Fragment>
                     ))}
-                    <col style={{ width: '28px' }} /> {/* Total B */}
-                    <col style={{ width: '28px' }} /> {/* Total G */}
+                    <col style={{ width: '30px' }} /> {/* Total B */}
+                    <col style={{ width: '30px' }} /> {/* Total G */}
                 </colgroup>
                 <thead>
                     <tr style={{ backgroundColor: '#fcfcfc', WebkitPrintColorAdjust: 'exact', color: '#000', height: '42px' }}>
-                        <th style={{ borderRight: '1.5px solid #000', borderBottom: '1.5px solid #000' }} rowSpan={2}>
-                            <RenderCell className="uppercase font-black text-[9px]">Sl</RenderCell>
+                        <th style={{ border: '1.5px solid #000', padding: '0px' }} rowSpan={2}>
+                            <RenderCell className="uppercase font-black text-[10px]">Sl</RenderCell>
                         </th>
-                        <th style={{ borderRight: '1.5px solid #000', borderBottom: '1.5px solid #000' }} rowSpan={2}>
-                            <RenderCell className="text-left px-3 uppercase font-black tracking-tight text-[10px]">Subject Name</RenderCell>
+                        <th style={{ border: '1.5px solid #000', padding: '0px' }} rowSpan={2}>
+                            <RenderCell className="text-left px-3 uppercase font-black tracking-tight text-[11px]">Subject Name</RenderCell>
                         </th>
                         {grades.map((g: string) => (
-                            <th key={g} style={{ borderRight: '1.5px solid #000', borderBottom: '1px solid #000' }} colSpan={2}>
+                            <th key={g} style={{ border: '1.5px solid #000', borderBottom: '1px solid #000', padding: '0px' }} colSpan={2}>
                                 <RenderCell className="uppercase font-black text-[10px]">{g}</RenderCell>
                             </th>
                         ))}
-                        <th style={{ borderBottom: '1px solid #000', backgroundColor: '#f1f5f9' }} colSpan={2}>
+                        <th style={{ border: '1.5px solid #000', borderBottom: '1px solid #000', backgroundColor: '#f1f5f9', padding: '0px' }} colSpan={2}>
                             <RenderCell className="uppercase font-black text-[10px]">Total</RenderCell>
                         </th>
                     </tr>
-                    <tr style={{ backgroundColor: '#fcfcfc', WebkitPrintColorAdjust: 'exact', color: '#000', height: '24px' }}>
+                    <tr style={{ backgroundColor: '#fcfcfc', WebkitPrintColorAdjust: 'exact', color: '#000', height: '28px' }}>
                         {[...grades, 'T'].map((g: string, i: number) => (
                             <React.Fragment key={i}>
-                                <th style={{ borderRight: '1px solid #000', borderBottom: '1.5px solid #000' }}>
+                                <th style={{ border: '1px solid #000', borderTop: '0px', padding: '0px' }}>
                                     <RenderCell className="text-[8px] uppercase font-black">B</RenderCell>
                                 </th>
-                                <th style={{ borderRight: g === 'T' ? 'none' : '1.5px solid #000', borderBottom: '1.5px solid #000' }}>
+                                <th style={{ border: '1px solid #000', borderTop: '0px', padding: '0px' }}>
                                     <RenderCell className="text-[8px] uppercase font-black">G</RenderCell>
                                 </th>
                             </React.Fragment>
@@ -565,7 +591,15 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
     // New State: Display Mode for Consolidated Report
     const [consolidatedDisplayMode, setConsolidatedDisplayMode] = useState<'marks' | 'grade' | 'both'>('both');
 
-    // Report Settings
+    // Consolidated Report Settings
+    const [consolidatedSettings, setConsolidatedSettings] = useState(() => {
+        const saved = localStorage.getItem('consolidated_report_settings');
+        return saved ? JSON.parse(saved) : {
+            showTotal: true, showPercentage: true, showGrade: true, showRank: true
+        };
+    });
+
+    // Progress Card Settings
     const [settings, setSettings] = useState(() => {
         const saved = localStorage.getItem('report_settings');
         return saved ? JSON.parse(saved) : {
@@ -574,8 +608,16 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
     });
 
     useEffect(() => {
+        localStorage.setItem('consolidated_report_settings', JSON.stringify(consolidatedSettings));
+    }, [consolidatedSettings]);
+
+    useEffect(() => {
         localStorage.setItem('report_settings', JSON.stringify(settings));
     }, [settings]);
+
+    const toggleConsolidatedSetting = (key: keyof typeof consolidatedSettings) => {
+        setConsolidatedSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
+    };
 
     const toggleSetting = (key: keyof typeof settings) => {
         setSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
@@ -770,8 +812,7 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
         }));
 
         // Academic Year
-        const currentYear = new Date().getFullYear();
-        const academicYear = `${currentYear} -${currentYear + 1} `;
+        const academicYear = getAcademicYear();
 
         const summary = {
             total: students.length,
@@ -841,9 +882,8 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
             const PAGE_HEIGHT_MM = orientation === 'landscape' ? 210 : 297;
             const totalPageHeightPx = PAGE_HEIGHT_MM * pxPerMm;
 
-            // padding: 10mm 15mm 30mm 15mm from @media print CSS
-            // Total vertical padding = 40mm
-            const pagePaddingVPx = 40 * pxPerMm;
+            // padding: 15mm 15mm 25mm 15mm from JSX
+            const pagePaddingVPx = (15 + 25) * pxPerMm;
             const usableHeightPx = totalPageHeightPx - pagePaddingVPx;
 
             const firstPageOverhead = (measureEl.querySelector('.first-page-overhead') as HTMLElement)?.offsetHeight || 0;
@@ -854,9 +894,9 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
             let currentHeight = firstPageOverhead;
 
             reportData.students.forEach((studentData, index) => {
-                const rowHeight = rows[index].offsetHeight;
+                const rowHeight = rows[index] ? rows[index].offsetHeight : 40;
 
-                if (currentHeight + rowHeight > usableHeightPx) {
+                if (currentHeight + rowHeight > usableHeightPx - 50) { // 50px buffer for safety
                     pages.push(currentPage);
                     currentPage = [studentData];
                     currentHeight = subsequentPageOverhead + rowHeight;
@@ -873,9 +913,9 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
             setPaginatedStudents(pages);
         };
 
-        const timer = setTimeout(runPagination, 200);
+        const timer = setTimeout(runPagination, 300);
         return () => clearTimeout(timer);
-    }, [dataKey, orientation, viewMode, consolidatedDisplayMode, selectedExamId]);
+    }, [dataKey, orientation, viewMode, consolidatedDisplayMode, selectedExamId, consolidatedSettings]);
 
     const pagesList = useMemo(() => {
         if (viewMode !== 'consolidated' || !paginatedStudents.length) return [];
@@ -898,7 +938,7 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
                         <StudentMarksTable
                             students={paginatedStudents[0]}
                             startIndex={0}
-                            selectedExam={selectedExam} state={state} orientation={orientation} displayMode={consolidatedDisplayMode}
+                            selectedExam={selectedExam} state={{ ...state, consolidatedSettings }} orientation={orientation} displayMode={consolidatedDisplayMode}
                         />
                     </div>
                 </ReportPageContent>
@@ -920,7 +960,7 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
                         <StudentMarksTable
                             students={paginatedStudents[i]}
                             startIndex={studentOffset}
-                            selectedExam={selectedExam} state={state} orientation={orientation} displayMode={consolidatedDisplayMode}
+                            selectedExam={selectedExam} state={{ ...state, consolidatedSettings }} orientation={orientation} displayMode={consolidatedDisplayMode}
                         />
                     </ReportPageContent>
                     <ReportFooter classTeacher={classTeacher} />
@@ -981,10 +1021,15 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
                 return;
             }
 
+            // A4 dimensions in pixels at 96 DPI (Standard for web)
+            const a4WidthPx = pdfOrientation === 'p' ? 794 : 1123;
+            const a4HeightPx = pdfOrientation === 'p' ? 1123 : 794;
+
             for (let i = 0; i < elements.length; i++) {
                 const el = elements[i] as HTMLElement;
 
-                // Use scale 3 for A4 to keep file size reasonable but crisp
+                // High Definition Rendering Step
+                // We use scale 3 for ultra-crisp text and images (100% quality)
                 const renderScale = 3;
 
                 const canvas = await html2canvas(el, {
@@ -994,13 +1039,29 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
                     backgroundColor: '#ffffff',
                     width: el.offsetWidth,
                     height: el.offsetHeight,
-                    onclone: (clonedDoc) => {
+                    onclone: (clonedDoc, clonedElement) => {
+                        // FORCE DESKTOP MODE ON CLONE (Even if user is on Mobile)
+                        // This ensures the element is rendered at its full A4 width
+                        const container = clonedElement;
+                        container.style.width = pdfOrientation === 'l' ? '297mm' : '210mm';
+                        container.style.height = pdfOrientation === 'l' ? '210mm' : '297mm';
+                        container.style.minHeight = 'auto'; // Remove min-height to prevent gaps
+                        container.style.margin = '0';
+                        container.style.padding = '15mm';
+                        container.style.transform = 'none';
+                        container.style.position = 'absolute';
+                        container.style.top = '0';
+                        container.style.left = '0';
+
+                        // Ensure body is wide enough for the clone
+                        clonedDoc.body.style.width = container.style.width;
+                        clonedDoc.body.style.overflow = 'visible';
+
                         // 1. SURGICAL COLOR REPLACEMENT (Prevent html2canvas crash while keeping styles)
                         const modernColorRegex = /(?:oklch|oklab|color-mix|lab|lch|hwb)\((?:[^()]+|\([^()]*\))*\)/g;
                         const sanitizeColor = (text: string) => {
                             if (!text || (!text.includes('okl') && !text.includes('color-mix'))) return text;
                             return text.replace(modernColorRegex, (m) => {
-                                // If it looks like a light color (background), make it white, else black
                                 if (m.includes('100%') || m.includes('98%') || m.includes('95%')) return '#ffffff';
                                 return '#000000';
                             });
@@ -1008,14 +1069,14 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
 
                         // Sanitize all style tags
                         const styleTags = clonedDoc.getElementsByTagName('style');
-                        for (let i = 0; i < styleTags.length; i++) {
-                            const st = styleTags[i];
+                        for (let j = 0; j < styleTags.length; j++) {
+                            const st = styleTags[j];
                             if (st.textContent) {
                                 st.textContent = sanitizeColor(st.textContent);
                             }
                         }
 
-                        // Sanitize all inline styles
+                        // Sanitize all inline styles & Force perfect alignment
                         const allNodes = clonedDoc.querySelectorAll('*');
                         allNodes.forEach((node: any) => {
                             const styleAttr = node.getAttribute('style');
@@ -1023,317 +1084,299 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
                                 node.setAttribute('style', sanitizeColor(styleAttr));
                             }
 
-                            // Force fix for specific report elements that often glitch in PDF
-                            if (node.classList.contains('consolidated-page') || node.classList.contains('report-content-wrapper')) {
-                                node.style.backgroundColor = '#ffffff';
-                                node.style.color = '#000000';
-                            }
-                            if (node.tagName === 'TABLE') {
-                                node.style.borderCollapse = 'collapse';
-                                node.style.backgroundColor = '#ffffff';
-                            }
+                            // FORCE PERFECT CENTERING (As requested by user: நடுவில்)
                             if (node.tagName === 'TD' || node.tagName === 'TH') {
                                 node.style.backgroundColor = '#ffffff';
                                 node.style.color = '#000000';
                                 node.style.borderColor = '#000000';
-                                node.style.verticalAlign = 'bottom';
+                                node.style.verticalAlign = 'middle'; // Center vertically
+                                node.style.textAlign = 'center';      // Center horizontally
+                                node.style.display = 'table-cell';    // Ensure table-cell behavior
+                                node.style.padding = '0';
+                            }
+
+                            if (node.classList.contains('cell')) {
+                                node.style.display = 'flex';
+                                node.style.alignItems = 'center';
+                                node.style.justifyContent = 'center';
+                                node.style.height = '100%';
+                                node.style.width = '100%';
+                                node.style.fontSize = '11px';
+                                node.style.textAlign = 'center';
+                                if (node.classList.contains('name')) {
+                                    node.style.justifyContent = 'flex-start';
+                                    node.style.paddingLeft = '8px';
+                                    node.style.textAlign = 'left';
+                                }
                             }
                         });
 
-                        // 2. INJECT FINAL REFINEMENT OVERRIDES
+                        // 2. INJECT FINAL REFINEMENT OVERRIDES (Version 2 Standards)
                         const style = clonedDoc.createElement('style');
                         style.textContent = `
+                            @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800;900&display=swap');
                             * {
                                 -webkit-print-color-adjust: exact !important;
                                 print-color-adjust: exact !important;
                                 color-adjust: exact !important;
-                                text-decoration: none !important;
                                 box-shadow: none !important;
+                                border-color: #000 !important;
+                                -webkit-font-smoothing: antialiased;
                             }
-                            
-                            /* Preserve user's Professional Table System */
+                            body { 
+                                font-family: 'Noto Sans', sans-serif !important; 
+                                background-color: #ffffff !important;
+                                color: #000 !important;
+                            }
                             table {
                                 border-collapse: collapse !important;
                                 width: 100% !important;
-                                table-layout: fixed !important;
-                                border: 1px solid #000 !important;
+                                table-layout: auto !important;
+                                border: 2px solid #000 !important;
                             }
                             td, th {
                                 border: 1px solid #000 !important;
-                                padding: 0 !important;
-                                height: 28px !important;
-                                background-color: #ffffff !important;
-                                overflow: visible !important;
+                                vertical-align: middle !important;
+                                text-align: center !important;
+                                padding: 2px !important;
+                                box-sizing: border-box !important;
                             }
-                            .cell {
-                                display: flex !important;
-                                align-items: center !important;
-                                justify-content: center !important;
-                                height: 100% !important;
-                                width: 100% !important;
-                                font-size: 11px !important;
-                                line-height: 1.2 !important;
-                                font-weight: 500 !important;
-                                position: relative !important;
-                                font-family: 'Inter', sans-serif !important;
+                            th {
+                                background-color: #f8fafc !important;
+                                font-weight: 900 !important;
                             }
-                            .cell.name {
-                                justify-content: flex-start !important;
-                                padding-left: 6px !important;
-                                font-weight: 600 !important;
+                            .report-multilingual {
+                                font-family: 'Noto Sans', sans-serif !important;
                             }
-                            
-                            .no-border-table, .no-border-table * { 
-                                border: none !important; 
-                                background-color: transparent !important; 
-                            }
-                            /* Ensure text is solid black */
-                            h1, p, span, div, th, td {
-                                color: #000000 !important;
-                                font-family: 'Inter', sans-serif !important;
+                            h1, h2, h3, p, span, div {
+                                color: #000 !important;
+                                font-family: 'Noto Sans', sans-serif !important;
                             }
                         `;
                         clonedDoc.head.appendChild(style);
                     }
                 });
 
-                const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                // Optimization: Use higher quality JPEG compression (0.98-1.0)
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
 
                 if (i > 0) {
                     pdf.addPage(pdfSize, pdfOrientation);
                 }
 
-                pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+                // Add image with FULL page width/height to ensure 1:1 mapping
+                pdf.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'SLOW');
             }
 
             const filename = viewMode === 'consolidated'
-                ? `${selectedClass?.name} -${selectedClass?.section}_${selectedExam?.name} _Consolidated.pdf`
+                ? `${selectedClass?.name}-${selectedClass?.section}_${selectedExam?.name}_Consolidated_V2.pdf`
                 : (selectedStudentId === 'all'
-                    ? `${selectedClass?.name} -${selectedClass?.section}_${selectedExam?.name} _All_Progress_Cards.pdf`
-                    : `${selectedClass?.name} -${selectedClass?.section}_${selectedExam?.name} _Progress_Card.pdf`);
+                    ? `${selectedClass?.name}-${selectedClass?.section}_${selectedExam?.name}_All_Cards_V2.pdf`
+                    : `${selectedClass?.name}-${selectedClass?.section}_${selectedExam?.name}_Progress_Card_V2.pdf`);
 
             pdf.save(filename);
         } catch (err) {
             console.error("PDF Generation failed", err);
-            alert("PDF Generation failed. This is likely due to unsupported CSS features. Reverting to basic rendering...");
+            alert("PDF Generation failed. Reverting to basic rendering...");
         } finally {
             setIsGeneratingPdf(false);
         }
     };
 
+
     return (
 
-        <div className="reports-container space-y-8 max-w-[1200px] mx-auto pb-20 print:pb-0 print:max-w-none print:mx-0 print:space-y-0">
+        <div className="reports-container space-y-6 max-w-[1200px] mx-auto pb-20 print:pb-0 print:max-w-none print:mx-0 print:space-y-0 px-4 sm:px-0">
             <style>
                 {`
-/* ================================
-PROFESSIONAL TABLE SYSTEM
-================================ */
-
-@media print {
-  /* ===== TABLE CORE ===== */
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-td, th {
-  border: 1px solid #000;
-  padding: 0;
-  height: 28px;
-}
-
-/* ===== MAGIC FIX ===== */
-td > .cell,
-th > .cell {
-  display: flex;
-  align-items: center;     /* vertical center */
-  justify-content: center; /* horizontal center */
-  height: 100%;
-  width: 100%;
-  font-size: 11px;
-  line-height: 1.2;
-  font-weight: 500;
-}
-
-/* Student name left aligned */
-.cell.name {
-  justify-content: flex-start;
-  padding-left: 6px;
-  font-weight: 600;
-}
-
-/* Header text */
-th .cell {
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-    /* Prevent pdf baseline glitch */
-    td *, th * {
-        transform: translateY(0.5px);
-    }
-
-
-
-        `}
+                @media print {
+                    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800;900&display=swap');
+                    * { font-family: 'Noto Sans', sans-serif !important; }
+                    table { border-collapse: collapse; width: 100%; border: 1.5px solid #000 !important; }
+                    td, th { border: 1px solid #000 !important; padding: 0; min-height: 28px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    td > .cell, th > .cell { display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; font-size: 11px; font-weight: 500; }
+                    .cell.name { justify-content: flex-start; padding-left: 6px; font-weight: 700; text-align: left; }
+                    th .cell { font-weight: 900; text-transform: uppercase; background-color: #f8fafc !important; }
+                    .no-print { display: none !important; }
+                    .print-area-tag { display: none !important; }
+                }
+                `}
             </style>
 
-            {/* Header & Controls */}
-            <div className="grid grid-cols-12 gap-4 items-center print:hidden">
-                <div className="col-span-10">
-                    <h1 className="text-3xl font-black text-slate-900">Reports & Analytics</h1>
-                    <p className="text-slate-400 font-bold truncate">Generate consolidated sheets and progress cards</p>
+            {/* Header Area */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+                <div className="px-2">
+                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Academic Analysis</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Reports & Analytics</h1>
                 </div>
-                <div className="col-span-2 flex justify-end gap-2">
+                <div className="flex items-center gap-2">
                     <button
                         onClick={handleDownloadPdf}
                         disabled={!selectedExamId || isGeneratingPdf}
-                        className={`p-3 text-white font-black rounded-2xl shadow-lg flex items-center justify-center transition-all aspect-square ${isGeneratingPdf ? 'bg-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] shadow-blue-200'}`}
-                        title="Download PDF"
+                        className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 text-white font-black rounded-xl shadow-xl transition-all ${isGeneratingPdf ? 'bg-slate-400 cursor-wait' : 'bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-blue-100'}`}
                     >
-                        {isGeneratingPdf ? <Loader2 size={24} className="animate-spin" /> : <Download size={24} />}
+                        {isGeneratingPdf ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        <span className="text-xs uppercase tracking-widest">PDF</span>
                     </button>
                     <button
                         onClick={handlePrint}
                         disabled={!selectedExamId}
-                        className="p-3 bg-slate-900 text-white font-black rounded-2xl shadow-lg flex items-center justify-center hover:bg-slate-800 transition-all aspect-square disabled:bg-slate-200 disabled:text-slate-400 group relative"
-                        title="Print / Export"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white font-black rounded-xl shadow-xl hover:bg-slate-800 active:scale-95 transition-all disabled:opacity-50"
                     >
-                        <Printer size={24} />
-                        <span className="absolute -bottom-10 right-0 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Print Preview Area Below</span>
+                        <Printer size={16} />
+                        <span className="text-xs uppercase tracking-widest">Print</span>
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm space-y-6 print:hidden no-print controls-area">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Class</label>
+            <div className="native-card !p-4 space-y-4 print:hidden no-print">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Class</label>
                         {primaryClass ? (
-                            <div className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700">
-                                {primaryClass.name} - {primaryClass.section} (My Class)
+                            <div className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-xs text-slate-700">
+                                {primaryClass.name} - {primaryClass.section}
                             </div>
                         ) : (
                             <select
                                 value={selectedClassId}
                                 onChange={(e) => { setSelectedClassId(e.target.value); setSelectedExamId(''); }}
-                                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                             >
                                 <option value="">Choose Class</option>
                                 {myClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name} - {c.section}</option>)}
                             </select>
                         )}
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Exam</label>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Exam</label>
                         <select
                             value={selectedExamId}
                             onChange={(e) => setSelectedExamId(e.target.value)}
                             disabled={!selectedClassId}
-                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:opacity-50"
                         >
                             <option value="">Choose Exam</option>
                             {examsForClass.map((e: any) => <option key={e.id} value={e.id}>{e.name}</option>)}
                         </select>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Report Type</label>
-                        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
-                            <button onClick={() => setViewMode('consolidated')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase transition-all ${viewMode === 'consolidated' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>Consolidated</button>
-                            <button onClick={() => setViewMode('progress_card')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase transition-all ${viewMode === 'progress_card' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>Progress Card</button>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Report Type</label>
+                        <div className="flex bg-slate-100/50 p-1 rounded-xl border border-slate-100">
+                            <button onClick={() => setViewMode('consolidated')} className={`flex-1 py-2 px-4 rounded-lg text-xs font-black uppercase transition-all ${viewMode === 'consolidated' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>Mark Sheet</button>
+                            <button onClick={() => setViewMode('progress_card')} className={`flex-1 py-2 px-4 rounded-lg text-xs font-black uppercase transition-all ${viewMode === 'progress_card' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>Progress Card</button>
                         </div>
                     </div>
                 </div>
-                {viewMode === 'consolidated' ? (
-                    <div className="flex gap-2 pt-4 border-t border-slate-50">
-                        {['marks', 'grade', 'both'].map((mode) => (
-                            <button key={mode} onClick={() => setConsolidatedDisplayMode(mode as any)} className={`px-4 py-2 rounded-xl text-xs font-black uppercase border transition-all ${consolidatedDisplayMode === mode ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-slate-200 text-slate-400'}`}>{mode === 'both' ? 'Marks & Grade' : mode + ' Only'}</button>
-                        ))}
+
+                <div className="pt-2 border-t border-slate-50">
+                    <div className="flex flex-wrap gap-2">
+                        {viewMode === 'consolidated' ? (
+                            <>
+                                <div className="flex flex-wrap gap-2 items-center mr-4">
+                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mr-2">Display:</span>
+                                    {['marks', 'grade', 'both'].map((mode) => (
+                                        <button key={mode} onClick={() => setConsolidatedDisplayMode(mode as any)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase border transition-all ${consolidatedDisplayMode === mode ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white border-slate-100 text-slate-400'}`}>{mode === 'both' ? 'Marks & Grade' : mode}</button>
+                                    ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mr-2">Columns:</span>
+                                    {[{ key: 'showTotal', label: 'Total' }, { key: 'showPercentage', label: '%' }, { key: 'showGrade', label: 'Grade' }, { key: 'showRank', label: 'Rank' }].map((opt) => (
+                                        <button key={opt.key} onClick={() => toggleConsolidatedSetting(opt.key as any)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase border transition-all ${consolidatedSettings[opt.key as keyof typeof consolidatedSettings] ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100' : 'bg-white border-slate-100 text-slate-400'}`}>
+                                            {consolidatedSettings[opt.key as keyof typeof consolidatedSettings] ? <CheckSquare size={12} /> : <Square size={12} />} {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        ) : (
+                            [{ key: 'showTe', label: 'TE' }, { key: 'showCe', label: 'CE' }, { key: 'showTotal', label: 'Total' }, { key: 'showGrade', label: 'Grade' }].map((opt) => (
+                                <button key={opt.key} onClick={() => toggleSetting(opt.key as any)} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[9px] font-black uppercase border transition-all ${settings[opt.key as keyof typeof settings] ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-100' : 'bg-white border-slate-100 text-slate-400'}`}>
+                                    {settings[opt.key as keyof typeof settings] ? <CheckSquare size={12} /> : <Square size={12} />} {opt.label}
+                                </button>
+                            ))
+                        )}
                     </div>
-                ) : (
-                    <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-50">
-                        {[{ key: 'showTe', label: 'TE' }, { key: 'showCe', label: 'CE' }, { key: 'showTotal', label: 'Total' }, { key: 'showGrade', label: 'Grade' }].map((opt) => (
-                            <button key={opt.key} onClick={() => toggleSetting(opt.key as any)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase border transition-all ${settings[opt.key as keyof typeof settings] ? 'bg-blue-600 text-white border-blue-600' : 'bg-white border-slate-200 text-slate-400'}`}>
-                                {settings[opt.key as keyof typeof settings] ? <CheckSquare size={16} /> : <Square size={16} />} {opt.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
+                </div>
             </div>
 
             {selectedExamId ? (
                 <div className="print-container print:block">
                     {viewMode === 'consolidated' && (
-                        <div id="consolidated-report-view" className="flex flex-col items-center py-10 bg-slate-100/30 rounded-3xl print:p-0 print:bg-transparent print:block border-2 border-slate-200 border-dashed relative">
-                            {/* Visual Print Indicators */}
-                            <div className="print-area-indicator print:hidden absolute -top-8 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-1.5 rounded-t-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-2 z-10">
-                                <Award size={14} className="animate-bounce" />
-                                Print Area Start
+                        <div id="consolidated-report-view" className="flex flex-col items-center py-10 bg-slate-50/50 rounded-3xl print:p-0 print:bg-transparent print:block border-2 border-slate-200 border-dashed relative">
+                            <div className="print-area-indicator print:hidden absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 z-10 transition-transform active:scale-95">
+                                <Award size={12} className="animate-bounce" />
+                                MARK SHEET PREVIEW
                             </div>
 
-                            <div className="flex flex-col gap-10 items-center w-full print:gap-0 print:block">
-                                {/* Measurement Area (Hidden from Print) */}
-                                <div ref={measureRef} className="absolute opacity-0 pointer-events-none -z-50 overflow-hidden print:hidden" style={{ width: orientation === 'landscape' ? '297mm' : '210mm' }}>
-                                    {/* First Page Overhead Measure */}
-                                    <div className="first-page-overhead">
-                                        <ReportPageContent title="CONSOLIDATED RESULT SHEET" selectedExam={selectedExam} selectedClass={selectedClass} state={state} classTeacher={classTeacher} academicYear={reportData.summary.academicYear}>
-                                            <OverallStatsTable summary={reportData.summary} selectedClass={selectedClass} classTeacher={classTeacher} />
-                                            <CategoryStatsTable categoryStats={reportData.summary.categoryStats} />
-                                            <div className="mt-4">
-                                                <h3 className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 border-b border-slate-100 pb-1 italic">Students Marks Record</h3>
-                                                <StudentMarksTable students={[]} selectedExam={selectedExam} state={state} orientation={orientation} displayMode={consolidatedDisplayMode} />
-                                            </div>
-                                        </ReportPageContent>
-                                    </div>
-                                    {/* Subsequent Page Overhead Measure */}
-                                    <div className="subsequent-page-overhead">
-                                        <ReportPageContent title="CONSOLIDATED RESULT SHEET" selectedExam={selectedExam} selectedClass={selectedClass} state={state} classTeacher={classTeacher} academicYear={reportData.summary.academicYear}>
-                                            <div className="mt-4">
-                                                <StudentMarksTable students={[]} selectedExam={selectedExam} state={state} orientation={orientation} displayMode={consolidatedDisplayMode} />
-                                            </div>
-                                        </ReportPageContent>
-                                    </div>
-                                    {/* Rows Measure */}
-                                    <div className="rows-measure">
-                                        <StudentMarksTable students={reportData.students} selectedExam={selectedExam} state={state} orientation={orientation} displayMode={consolidatedDisplayMode} />
-                                    </div>
+                            <div className="print-area-tag mb-4 bg-slate-900 border-2 border-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 no-print">
+                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                                PRINT AREA START
+                            </div>
+
+                            {/* Hidden Measurement View */}
+                            <div ref={measureRef} className="absolute opacity-0 pointer-events-none -z-50 overflow-hidden h-0" style={{ width: orientation === 'landscape' ? '297mm' : '210mm' }}>
+                                <div className="first-page-overhead">
+                                    <ReportPageContent title="CONSOLIDATED RESULT SHEET" selectedExam={selectedExam} selectedClass={selectedClass} state={state} classTeacher={classTeacher} academicYear={reportData.summary.academicYear}>
+                                        <OverallStatsTable summary={reportData.summary} selectedClass={selectedClass} classTeacher={classTeacher} />
+                                        <CategoryStatsTable categoryStats={reportData.summary.categoryStats} />
+                                        <h3 className="text-[10px] font-black uppercase text-slate-400 mb-2 border-b">STUDENT RECORDS</h3>
+                                    </ReportPageContent>
                                 </div>
-
-                                {/* Consolidated Report Split into A4 Pages */}
-                                {pagesList}
+                                <div className="subsequent-page-overhead">
+                                    <ReportPageContent title="CONSOLIDATED RESULT SHEET" selectedExam={selectedExam} selectedClass={selectedClass} state={state} classTeacher={classTeacher} academicYear={reportData.summary.academicYear} />
+                                </div>
+                                <div className="rows-measure">
+                                    <StudentMarksTable
+                                        students={reportData.students}
+                                        startIndex={0}
+                                        selectedExam={selectedExam} state={{ ...state, consolidatedSettings }} orientation={orientation} displayMode={consolidatedDisplayMode}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="print-area-indicator print:hidden bg-red-600 text-white px-6 py-1.5 rounded-b-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-2 mt-4">
-                                <FileText size={14} />
-                                Print Area End
+                            <div className="flex flex-col gap-10 items-center w-full print:gap-0 print:block overflow-x-auto custom-scrollbar">
+                                <div className="min-w-max sm:min-w-0 flex flex-col items-center w-full">
+                                    {pagesList}
+                                </div>
+                            </div>
+
+                            <div className="print-area-tag mt-10 bg-slate-900 border-2 border-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 no-print">
+                                <div className="w-2 h-2 bg-rose-400 rounded-full"></div>
+                                PRINT AREA END
                             </div>
                         </div>
                     )}
 
                     {viewMode === 'progress_card' && (
                         <div className="space-y-6 progress-card-container">
-                            <div className="flex justify-end print:hidden no-print">
-                                <select
-                                    className="bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-sm outline-none"
-                                    value={selectedStudentId}
-                                    onChange={(e) => setSelectedStudentId(e.target.value)}
-                                >
-                                    <option value="all">Whole Class (Print All)</option>
-                                    {reportData.students.map((d: any) => (
-                                        <option key={d.student.id} value={d.student.id}>{d.student.name}</option>
-                                    ))}
-                                </select>
+                            <div className="flex justify-end print:hidden no-print px-2">
+                                <div className="space-y-1 w-full sm:w-64">
+                                    <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Student</label>
+                                    <select
+                                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 shadow-sm appearance-none"
+                                        value={selectedStudentId}
+                                        onChange={(e) => setSelectedStudentId(e.target.value)}
+                                    >
+                                        <option value="all">Whole Class (Print All)</option>
+                                        {reportData.students.map((d: any) => (
+                                            <option key={d.student.id} value={d.student.id}>{d.student.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
-                            <div id="progress-cards-view" className="flex flex-col items-center py-10 bg-slate-100/30 rounded-3xl print:p-0 print:bg-transparent print:block border-2 border-slate-200 border-dashed relative">
-                                {/* Visual Print Indicators */}
-                                <div className="print-area-indicator print:hidden absolute -top-8 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-1.5 rounded-t-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-2 z-10">
-                                    <Award size={14} className="animate-bounce" />
-                                    Print Area Start
+                            <div id="progress-cards-view" className="flex flex-col items-center py-10 bg-slate-50/50 rounded-3xl print:p-0 print:bg-transparent print:block border-2 border-slate-200 border-dashed relative">
+                                <div className="print-area-indicator print:hidden absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 z-10 transition-transform active:scale-95">
+                                    <Award size={12} className="animate-bounce" />
+                                    PROGRESS CARD PREVIEW
                                 </div>
 
-                                <div className="flex flex-wrap justify-center gap-8 print:gap-0 print:block w-full">
+                                <div className="print-area-tag mb-8 bg-slate-900 border-2 border-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 no-print">
+                                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                                    PRINT AREA START
+                                </div>
+
+                                <div className="flex flex-wrap justify-center gap-8 print:gap-0 print:block w-full px-4 sm:px-0">
                                     {selectedStudentId === 'all' ? (
                                         reportData.students.map((data: any) => (
                                             <React.Fragment key={data.student.id}>
@@ -1353,18 +1396,21 @@ th .cell {
                                     )}
                                 </div>
 
-                                <div className="print-area-indicator print:hidden bg-red-600 text-white px-6 py-1.5 rounded-b-xl text-[11px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-2 mt-4">
-                                    <FileText size={14} />
-                                    Print Area End
+                                <div className="print-area-tag mt-10 bg-slate-900 border-2 border-slate-900 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] flex items-center gap-3 no-print">
+                                    <div className="w-2 h-2 bg-rose-400 rounded-full"></div>
+                                    PRINT AREA END
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
             ) : (
-                <div className="bg-white p-24 rounded-[3rem] text-center border-4 border-dashed border-slate-100 flex flex-col items-center justify-center print:hidden">
-                    <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mb-6 text-blue-600 shadow-inner"><Award size={32} /></div>
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-sm">Select Class & Exam to Generate Reports.</p>
+                <div className="py-20 text-center animate-fade-scale">
+                    <div className="w-16 h-16 bg-blue-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 text-blue-600 border border-blue-100">
+                        <Award size={28} />
+                    </div>
+                    <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Awaiting Selection</p>
+                    <p className="text-slate-500 font-bold text-sm mt-1">Select class and exam to generate reports</p>
                 </div>
             )}
         </div>

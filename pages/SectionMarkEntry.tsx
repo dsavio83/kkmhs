@@ -4,7 +4,7 @@ import { User, UserRole } from '../types';
 import {
     Save, AlertCircle, CheckCircle2,
     ChevronRight, Loader2, BookOpen,
-    Lock, Smartphone, X
+    Lock, Smartphone, X, UserX
 } from 'lucide-react';
 import { markAPI } from '../services/api';
 
@@ -71,26 +71,38 @@ const SectionMarkEntry: React.FC<SectionMarkEntryProps> = ({ user, state, setSta
 
     // Local state for edits
     const [entryData, setEntryData] = useState<Record<string, Record<string, number>>>({});
+    const [absentMap, setAbsentMap] = useState<Record<string, boolean>>({});
 
     // Initialize data from existing marks
     useEffect(() => {
         if (!selectedExamId || !selectedSubjectId) return;
 
         const newEntryData: Record<string, Record<string, number>> = {};
+        const newAbsentMap: Record<string, boolean> = {};
+
         filteredStudents.forEach((student: any) => {
             const mark = state.marks.find((m: any) =>
                 getId(m.studentId) === student.id &&
                 getId(m.subjectId) === selectedSubjectId &&
                 getId(m.examId) === selectedExamId
             );
-            if (mark && mark.detailedMarks) {
-                newEntryData[student.id] = {};
-                mark.detailedMarks.forEach((dm: any) => {
-                    newEntryData[student.id][dm.sectionId] = dm.marks;
-                });
+
+            if (mark) {
+                // Check if marked as Absent ('A')
+                if (mark.teMark === 'A') {
+                    newAbsentMap[student.id] = true;
+                }
+
+                if (mark.detailedMarks) {
+                    newEntryData[student.id] = {};
+                    mark.detailedMarks.forEach((dm: any) => {
+                        newEntryData[student.id][dm.sectionId] = dm.marks;
+                    });
+                }
             }
         });
         setEntryData(newEntryData);
+        setAbsentMap(newAbsentMap);
     }, [selectedExamId, selectedSubjectId, state.marks]);
 
     const showToastMsg = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -126,12 +138,18 @@ const SectionMarkEntry: React.FC<SectionMarkEntryProps> = ({ user, state, setSta
         }
     };
 
+    const toggleAbsent = (studentId: string) => {
+        setAbsentMap(prev => ({ ...prev, [studentId]: !prev[studentId] }));
+    };
+
     const handleBulkSave = async () => {
         if (!selectedExamId || !selectedSubjectId || !activeConfig) return;
 
         setIsSaving(true);
         try {
             for (const student of filteredStudents) {
+                const isAbsent = absentMap[student.id];
+
                 // If student is entering, they might be already locked
                 const existingMark = state.marks.find((m: any) =>
                     getId(m.studentId) === student.id &&
@@ -143,32 +161,44 @@ const SectionMarkEntry: React.FC<SectionMarkEntryProps> = ({ user, state, setSta
                     continue; // Skip if already locked
                 }
 
-                const studentMarks = entryData[student.id] || {};
-                const detailedMarks = Object.entries(studentMarks).map(([sid, m]) => ({
-                    sectionId: sid,
-                    marks: m
-                }));
+                let savePayload: any;
 
-                const totalObtained = detailedMarks.reduce((acc: number, curr: any) => acc + (curr.marks as number), 0);
-                const roundedTotal = Math.ceil(totalObtained);
+                if (isAbsent) {
+                    savePayload = {
+                        studentId: student.id,
+                        subjectId: selectedSubjectId,
+                        examId: selectedExamId,
+                        detailedMarks: [], // Clear detailed marks if absent
+                        teMark: 'A', // Mark as Absent
+                        ceMark: 'A', // Optional: Mark CE as Absent too? usually if absent for exam, TE is A. Keep logic consistent.
+                        isLocked: user.role === UserRole.STUDENT ? true : (existingMark?.isLocked || false)
+                    };
+                } else {
+                    const studentMarks = entryData[student.id] || {};
+                    const detailedMarks = Object.entries(studentMarks).map(([sid, m]) => ({
+                        sectionId: sid,
+                        marks: m
+                    }));
 
-                // Strict validation: Must match activeConfig.maxTe exactly
-                if (roundedTotal !== activeConfig.maxTe) {
-                    showToastMsg(`Error for ${student.name}: Total marks (${roundedTotal}) must match exactly with Max TE (${activeConfig.maxTe})`, 'error');
-                    setIsSaving(false);
-                    return;
+                    const totalObtained = detailedMarks.reduce((acc: number, curr: any) => acc + (curr.marks as number), 0);
+                    const roundedTotal = Math.ceil(totalObtained);
+
+                    // Strict validation: Must match activeConfig.maxTe exactly (only if NOT absent)
+                    if (roundedTotal !== activeConfig.maxTe) {
+                        showToastMsg(`Error for ${student.name}: Total marks (${roundedTotal}) must match exactly with Max TE (${activeConfig.maxTe})`, 'error');
+                        setIsSaving(false);
+                        return;
+                    }
+
+                    savePayload = {
+                        studentId: student.id,
+                        subjectId: selectedSubjectId,
+                        examId: selectedExamId,
+                        detailedMarks,
+                        teMark: roundedTotal.toString(),
+                        isLocked: user.role === UserRole.STUDENT ? true : (existingMark?.isLocked || false)
+                    };
                 }
-
-                // Final Save Data
-                const savePayload = {
-                    studentId: student.id,
-                    subjectId: selectedSubjectId,
-                    examId: selectedExamId,
-                    detailedMarks,
-                    teMark: roundedTotal.toString(),
-                    // Auto-lock for student submissions
-                    isLocked: user.role === UserRole.STUDENT ? true : (existingMark?.isLocked || false)
-                };
 
                 const res = await markAPI.create(savePayload);
 
@@ -201,43 +231,43 @@ const SectionMarkEntry: React.FC<SectionMarkEntryProps> = ({ user, state, setSta
     }
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                <div className="flex flex-col md:flex-row gap-6">
+        <div className="space-y-4 max-w-5xl mx-auto pb-12">
+            <div className="native-card !p-4 bg-white/80 backdrop-blur-md">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {user.role !== UserRole.STUDENT && (
-                        <div className="flex-1 space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Class</label>
+                        <div className="space-y-1">
+                            <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Class</label>
                             <select
                                 value={selectedClassId}
                                 onChange={(e) => { setSelectedClassId(e.target.value); setSelectedExamId(''); setSelectedSubjectId(''); }}
-                                className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                             >
-                                <option value="">Choose Class...</option>
+                                <option value="">Select Class...</option>
                                 {relevantClasses.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
                     )}
-                    <div className="flex-1 space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Exam</label>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Exam</label>
                         <select
                             value={selectedExamId}
                             onChange={(e) => { setSelectedExamId(e.target.value); setSelectedSubjectId(''); }}
-                            className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:opacity-50"
                             disabled={!selectedClassId}
                         >
-                            <option value="">Choose Exam...</option>
+                            <option value="">Select Exam...</option>
                             {relevantExams.map((e: any) => <option key={e.id} value={e.id}>{e.name}</option>)}
                         </select>
                     </div>
-                    <div className="flex-1 space-y-1.5">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Subject</label>
+                    <div className="space-y-1">
+                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
                         <select
                             value={selectedSubjectId}
                             onChange={(e) => setSelectedSubjectId(e.target.value)}
-                            className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-bold text-xs outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:opacity-50"
                             disabled={!selectedExamId}
                         >
-                            <option value="">Choose Subject...</option>
+                            <option value="">Select Subject...</option>
                             {examSubjects.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                         </select>
                     </div>
@@ -245,95 +275,119 @@ const SectionMarkEntry: React.FC<SectionMarkEntryProps> = ({ user, state, setSta
             </div>
 
             {selectedClassId && selectedExamId && selectedSubjectId && (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                        <div>
-                            <h3 className="text-xl font-black text-slate-800">Detailed Mark Entry</h3>
-                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">
-                                Max TE Allowed: {activeConfig?.maxTe}
-                            </p>
+                <div className="space-y-4 animate-fade-scale">
+                    <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-3xl border border-slate-100 shadow-sm gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-premium">
+                                <BookOpen size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black text-slate-800">Detailed Mark Entry</h3>
+                                <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                                    Limit: {activeConfig?.maxTe} Marks
+                                </p>
+                            </div>
                         </div>
                         <button
                             onClick={handleBulkSave}
                             disabled={isSaving}
-                            className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl font-black shadow-xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
                         >
-                            {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                            {user.role === UserRole.STUDENT ? 'Submit & Lock' : 'Bulk Save & AI Run'}
+                            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                            <span className="text-xs uppercase tracking-widest">
+                                {user.role === UserRole.STUDENT ? 'Submit & Lock' : 'Process Bulk Save'}
+                            </span>
                         </button>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                <tr>
-                                    <th className="px-8 py-4 sticky left-0 bg-slate-50 z-10 w-64">Student Name</th>
-                                    {sections.map((s: any) => (
-                                        <th key={s.id} className="px-6 py-4 text-center min-w-[120px]">
-                                            {s.name}
-                                            <div className="text-[8px] opacity-70 mt-1">Max: {s.maxMarks}</div>
-                                        </th>
-                                    ))}
-                                    <th className="px-8 py-4 text-right">Draft Total</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {filteredStudents.map((student: any) => {
-                                    const studentData = entryData[student.id] || {};
-                                    const draftTotal = Object.values(studentData).reduce((a: number, b: any) => a + (b as number), 0);
-                                    const isLocked = state.marks.find((m: any) => getId(m.studentId) === student.id && getId(m.subjectId) === selectedSubjectId && getId(m.examId) === selectedExamId)?.isLocked;
+                    <div className="space-y-3">
+                        {filteredStudents.map((student: any) => {
+                            const studentData = entryData[student.id] || {};
+                            const draftTotal = Object.values(studentData).reduce((a: number, b: any) => a + (b as number), 0);
+                            const isLocked = state.marks.find((m: any) => getId(m.studentId) === student.id && getId(m.subjectId) === selectedSubjectId && getId(m.examId) === selectedExamId)?.isLocked;
+                            const totalExceeds = Math.ceil(draftTotal as number) > (activeConfig?.maxTe || 0);
+                            const isAbsent = absentMap[student.id];
 
-                                    return (
-                                        <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-8 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-slate-700">{student.name}</span>
-                                                    {isLocked && <Lock size={12} className="text-amber-500" />}
+                            return (
+                                <div key={student.id} className={`native-card !p-4 transition-all ${totalExceeds ? 'bg-red-50/50 border-red-100' : ''}`}>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${isAbsent ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                {isAbsent ? 'A' : student.name.charAt(0)}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`font-bold text-xs truncate ${isAbsent ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{student.name}</span>
+                                                    {isLocked && <Lock size={10} className="text-amber-500" />}
                                                 </div>
-                                            </td>
-                                            {sections.map((s: any) => (
-                                                <td key={s.id} className="px-4 py-2">
-                                                    <input
-                                                        id={`input-${student.id}-${s.id}`}
-                                                        type="number"
-                                                        step="0.5"
-                                                        disabled={isLocked || isSaving}
-                                                        value={entryData[student.id]?.[s.id] ?? ''}
-                                                        onChange={(e) => handleInputChange(student.id, s.id, e.target.value)}
-                                                        className="w-full text-center p-3 bg-slate-50 rounded-xl border border-slate-100 font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all disabled:opacity-50"
-                                                        placeholder="-"
-                                                    />
-                                                </td>
-                                            ))}
-                                            <td className="px-8 py-4 text-right">
-                                                <span className={`px-4 py-2 rounded-xl text-sm font-black ${Math.ceil(draftTotal as number) > (activeConfig?.maxTe || 0) ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-700'}`}>
-                                                    {draftTotal}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Roll #{student.admissionNo}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-4">
+                                            {/* Absent Toggle - Only for teachers/admins */}
+                                            {user.role !== UserRole.STUDENT && (
+                                                <button
+                                                    onClick={() => toggleAbsent(student.id)}
+                                                    disabled={isLocked}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-black uppercase transition-all ${isAbsent ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'}`}
+                                                >
+                                                    <UserX size={12} />
+                                                    {isAbsent ? 'Absent' : 'Present'}
+                                                </button>
+                                            )}
+
+                                            <div className="flex-1 overflow-x-auto custom-scrollbar -mx-2 px-2">
+                                                <div className="flex gap-2 min-w-max">
+                                                    {sections.map((s: any) => (
+                                                        <div key={s.id} className="flex flex-col items-center">
+                                                            <span className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter truncate w-14 text-center">{s.name}</span>
+                                                            <input
+                                                                id={`input-${student.id}-${s.id}`}
+                                                                type="text"
+                                                                disabled={isLocked || isSaving || isAbsent}
+                                                                value={entryData[student.id]?.[s.id] ?? ''}
+                                                                onChange={(e) => handleInputChange(student.id, s.id, e.target.value)}
+                                                                className={`w-12 p-2 bg-slate-50 border border-slate-100 rounded-lg font-black text-[11px] text-center text-slate-800 outline-none focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all disabled:opacity-50 disabled:bg-slate-100`}
+                                                                placeholder={isAbsent ? '-' : `/${s.maxMarks}`}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-end sm:flex-col sm:items-end gap-2 shrink-0">
+                                                <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest sm:hidden">Total</p>
+                                                <div className={`px-3 py-1.5 rounded-lg text-xs font-black ${isAbsent ? 'bg-slate-100 text-slate-400' : (totalExceeds ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 'bg-blue-50 text-blue-700 border border-blue-100')}`}>
+                                                    {isAbsent ? 'Absent' : draftTotal}
+                                                    {!isAbsent && <span className="opacity-50 text-[10px]">/ {activeConfig?.maxTe}</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
 
             {!selectedSubjectId && (
-                <div className="bg-white p-24 rounded-[3rem] text-center border-4 border-dashed border-slate-100 flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mb-6 text-blue-600">
-                        <BookOpen size={32} />
+                <div className="py-20 text-center animate-fade-scale">
+                    <div className="w-16 h-16 bg-blue-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 text-blue-600 border border-blue-100">
+                        <BookOpen size={28} />
                     </div>
-                    <p className="text-slate-400 font-black uppercase tracking-widest text-sm">Select selections above to start entry.</p>
+                    <p className="text-slate-400 font-black uppercase tracking-[0.2em] text-[10px]">Awaiting Configuration</p>
+                    <p className="text-slate-500 font-bold text-sm mt-1">Select class, exam and subject above</p>
                 </div>
             )}
 
             {toast && (
                 <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] animate-in slide-in-from-bottom-10 duration-300">
-                    <div className={`px-8 py-4 rounded-[2rem] shadow-2xl flex items-center space-x-3 border border-white/10 backdrop-blur-xl text-white ${toast.type === 'success' ? 'bg-slate-900' : 'bg-red-600'}`}>
-                        {toast.type === 'success' ? <CheckCircle2 size={24} className="text-green-400" /> : <AlertCircle size={24} className="text-white" />}
-                        <span className="font-black uppercase tracking-widest text-xs">{toast.msg}</span>
-                        <button onClick={() => setToast(null)} className="ml-4 p-1 hover:bg-white/10 rounded-full"><X size={14} /></button>
+                    <div className={`px-6 py-3 rounded-2xl shadow-premium flex items-center space-x-3 border border-white/10 backdrop-blur-xl text-white ${toast.type === 'success' ? 'bg-slate-900/90' : 'bg-red-600/90'}`}>
+                        {toast.type === 'success' ? <CheckCircle2 size={18} className="text-green-400" /> : <AlertCircle size={18} className="text-white" />}
+                        <span className="font-black uppercase tracking-widest text-[10px]">{toast.msg}</span>
+                        <button onClick={() => setToast(null)} className="ml-2 p-1 hover:bg-white/10 rounded-full"><X size={12} /></button>
                     </div>
                 </div>
             )}

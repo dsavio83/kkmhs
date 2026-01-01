@@ -395,52 +395,46 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, state, set
             </div>
 
             {activeView === 'dashboard' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                <div className="space-y-4 animate-slide-up">
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold"><Users /></div>
-                            <div>
-                                <p className="text-slate-400 text-xs font-black uppercase">Total Students</p>
-                                <p className="text-2xl font-black text-slate-800">{genderStats.total}</p>
-                            </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div className="native-card flex flex-col items-center text-center p-4">
+                            <div className="w-10 h-10 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-600 mb-2"><Users size={20} /></div>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total</p>
+                            <p className="text-xl font-black text-slate-900">{genderStats.total}</p>
                         </div>
-                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 font-bold"><Users /></div>
-                            <div>
-                                <p className="text-slate-400 text-xs font-black uppercase">Boys</p>
-                                <p className="text-2xl font-black text-slate-800">{genderStats.boys}</p>
-                            </div>
+                        <div className="native-card flex flex-col items-center text-center p-4">
+                            <div className="w-10 h-10 bg-indigo-500/10 rounded-2xl flex items-center justify-center text-indigo-600 mb-2"><Users size={20} /></div>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Boys</p>
+                            <p className="text-xl font-black text-slate-800">{genderStats.boys}</p>
                         </div>
-                        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-                            <div className="w-12 h-12 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-600 font-bold"><Users /></div>
-                            <div>
-                                <p className="text-slate-400 text-xs font-black uppercase">Girls</p>
-                                <p className="text-2xl font-black text-slate-800">{genderStats.girls}</p>
-                            </div>
+                        <div className="native-card flex flex-col items-center text-center p-4 col-span-2 md:col-span-1">
+                            <div className="w-10 h-10 bg-pink-500/10 rounded-2xl flex items-center justify-center text-pink-600 mb-2"><Users size={20} /></div>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Girls</p>
+                            <p className="text-xl font-black text-slate-800">{genderStats.girls}</p>
                         </div>
                     </div>
 
                     {/* Caste Stats Table */}
-                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                        <h3 className="text-lg font-black text-slate-800 mb-4">Community Analysis</h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
+                    <div className="native-card">
+                        <h3 className="text-sm font-black text-slate-800 mb-4 uppercase tracking-widest">Community Analysis</h3>
+                        <div className="overflow-x-auto -mx-2">
+                            <table className="w-full text-xs text-left">
+                                <thead className="bg-slate-50 text-slate-500 font-black uppercase text-[10px] tracking-wider">
                                     <tr>
-                                        <th className="px-4 py-3 rounded-l-xl">Category</th>
-                                        <th className="px-4 py-3">Boys</th>
-                                        <th className="px-4 py-3">Girls</th>
-                                        <th className="px-4 py-3 rounded-r-xl">Total</th>
+                                        <th className="px-3 py-2.5 rounded-l-xl">Category</th>
+                                        <th className="px-3 py-2.5">B</th>
+                                        <th className="px-3 py-2.5">G</th>
+                                        <th className="px-3 py-2.5 rounded-r-xl">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                     {Object.keys(casteStats).map(cat => (
-                                        <tr key={cat}>
-                                            <td className="px-4 py-3 font-bold text-slate-700">{cat}</td>
-                                            <td className="px-4 py-3 font-medium text-slate-600">{casteStats[cat].male}</td>
-                                            <td className="px-4 py-3 font-medium text-slate-600">{casteStats[cat].female}</td>
-                                            <td className="px-4 py-3 font-black text-slate-800">{casteStats[cat].total}</td>
+                                        <tr key={cat} className="hover:bg-slate-50/50">
+                                            <td className="px-3 py-3 font-bold text-slate-700">{cat}</td>
+                                            <td className="px-3 py-3 font-medium text-slate-500">{casteStats[cat].male}</td>
+                                            <td className="px-3 py-3 font-medium text-slate-500">{casteStats[cat].female}</td>
+                                            <td className="px-3 py-3 font-black text-slate-900">{casteStats[cat].total}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -502,104 +496,62 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, state, set
             )}
 
             {activeView === 'students' && (
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-right-4 duration-500">
+                <div className="space-y-4 animate-slide-up">
                     {/* Header / Filter Toolbar */}
-                    <div className="p-6 border-b border-slate-50 flex flex-col xl:flex-row justify-between items-center gap-4 bg-slate-50/30">
-                        <div className="relative flex-1 w-full xl:max-w-md">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                    <div className="native-card space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                             <input
-                                placeholder="Search students..."
+                                placeholder="Search by name or admission no..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-white border border-slate-200 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold text-sm"
+                                className="w-full bg-slate-50/50 border border-slate-100 rounded-2xl pl-11 pr-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-bold text-sm"
                             />
                         </div>
 
-                        <div className="flex gap-2 w-full xl:w-auto">
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" className="hidden" />
-
-                            <button onClick={handleImportClick} className="flex-1 xl:flex-none px-4 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 flex items-center justify-center text-xs uppercase tracking-wider">
-                                <Upload size={16} className="mr-2" /> Import
-                            </button>
-                            <button onClick={handleExport} className="flex-1 xl:flex-none px-4 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 flex items-center justify-center text-xs uppercase tracking-wider">
-                                <Download size={16} className="mr-2" /> Export
-                            </button>
+                        <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => { setEditingStudent(null); setShowAddStudent(true); }}
-                                className="flex-1 xl:flex-none px-6 py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center justify-center whitespace-nowrap"
+                                className="col-span-2 py-4 bg-blue-600 text-white font-black rounded-2xl shadow-premium active:scale-95 transition-all flex items-center justify-center text-sm"
                             >
-                                <UserPlus size={18} className="mr-2" /> Add Student
+                                <UserPlus size={18} className="mr-2" /> Add New Student
                             </button>
+                            <button onClick={handleImportClick} className="py-3 bg-white border border-slate-100 text-slate-600 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center text-[10px] uppercase tracking-wider">
+                                <Upload size={14} className="mr-1.5" /> Import
+                            </button>
+                            <button onClick={handleExport} className="py-3 bg-white border border-slate-100 text-slate-600 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center text-[10px] uppercase tracking-wider">
+                                <Download size={14} className="mr-1.5" /> Export
+                            </button>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".csv" className="hidden" />
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                <tr>
-                                    <th className="px-6 py-4">Student</th>
-                                    <th className="px-6 py-4">Contact</th>
-                                    <th className="px-6 py-4">Transport</th>
-                                    <th className="px-6 py-4">Details</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {myStudents.length > 0 ? (
-                                    myStudents
-                                        .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.admissionNo.includes(searchTerm))
-                                        .map((student: any) => (
-                                            <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center">
-                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black mr-3 ${student.gender === 'Female' ? 'bg-pink-50 text-pink-600' : 'bg-blue-50 text-blue-600'}`}>
-                                                            {student.name.charAt(0)}
-                                                        </div>
-                                                        <div>
-                                                            <p className="font-bold text-slate-800 text-sm">{student.name}</p>
-                                                            <p className="text-[10px] font-bold text-slate-400 uppercase">Roll #{student.admissionNo}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="flex items-center text-xs font-bold text-slate-500"><Phone size={12} className="mr-1.5 text-slate-300" /> {student.mobile}</span>
-                                                        {student.email && <span className="flex items-center text-xs font-bold text-slate-500"><Mail size={12} className="mr-1.5 text-slate-300" /> {student.email}</span>}
-                                                        <span className="flex items-center text-xs font-bold text-slate-500"><MapPin size={12} className="mr-1.5 text-slate-300" /> {student.address?.substring(0, 15) || 'N/A'}...</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <Bus size={14} className="text-slate-300" />
-                                                        <span className="text-xs font-bold text-slate-600">{student.transportMode || 'N/A'}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex gap-2">
-                                                            <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase">{student.gender}</span>
-                                                            <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-[10px] font-bold uppercase">{student.category}</span>
-                                                        </div>
-                                                        {student.caste && <span className="text-[10px] text-slate-400 font-bold ml-1">Caste: {student.caste}</span>}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end space-x-1">
-                                                        <button onClick={() => { setEditingStudent(student); setShowAddStudent(true); }} className="p-2 text-slate-400 hover:text-blue-500 bg-white border border-slate-100 rounded-lg hover:border-blue-100 transition-all"><Edit2 size={16} /></button>
-                                                        <button onClick={() => deleteStudent(student.id)} className="p-2 text-slate-300 hover:text-red-500 bg-white border border-slate-100 rounded-lg hover:border-red-100 transition-all"><Trash2 size={16} /></button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan={5} className="p-12 text-center text-slate-400 font-bold text-sm">
-                                            No students found in your class.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="space-y-3">
+                        {myStudents.length > 0 ? (
+                            myStudents
+                                .filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.admissionNo.includes(searchTerm))
+                                .map((student: any) => (
+                                    <div key={student.id} className="native-card !p-4 flex items-center justify-between group">
+                                        <div className="flex items-center space-x-3 overflow-hidden">
+                                            <div className={`w-11 h-11 min-w-[44px] rounded-2xl flex items-center justify-center text-base font-black ${student.gender === 'Female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                {student.name.charAt(0)}
+                                            </div>
+                                            <div className="overflow-hidden">
+                                                <p className="font-bold text-slate-900 text-sm truncate">{student.name}</p>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">#{student.admissionNo} • {student.gender?.charAt(0)} • {student.category}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center space-x-1 ml-2">
+                                            <button onClick={() => { setEditingStudent(student); setShowAddStudent(true); }} className="w-9 h-9 flex items-center justify-center text-blue-500 bg-blue-50/50 rounded-xl active:scale-90 transition-all"><Edit2 size={16} /></button>
+                                            <button onClick={() => deleteStudent(student.id)} className="w-9 h-9 flex items-center justify-center text-slate-300 hover:text-red-500 bg-slate-50/50 rounded-xl active:scale-90 transition-all"><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                ))
+                        ) : (
+                            <div className="native-card py-12 text-center text-slate-400 font-bold text-sm">
+                                No students found.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

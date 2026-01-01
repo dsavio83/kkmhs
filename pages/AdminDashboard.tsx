@@ -5,7 +5,7 @@ import { User, UserRole, ClassRoom, Subject, GradeScheme, GradeBoundary } from '
 import {
     Plus, Edit2, Trash2, Search, Filter,
     MoreVertical, CheckCircle2, UserPlus, BookOpen,
-    Settings, GraduationCap, X, Save, Users, Layers, Upload, Building, AlertCircle, Download, Database, RefreshCw, Loader2
+    Settings, GraduationCap, X, Save, Users, Layers, Upload, Building, AlertCircle, Download, Database, RefreshCw, Loader2, FileText
 } from 'lucide-react';
 import { saveAppState, clearAppState } from '../store';
 import { userAPI, classAPI, subjectAPI, gradeAPI, schoolAPI } from '../services/api';
@@ -41,6 +41,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
 
     // State for Class Creation (Subject Mapping)
     const [selectedSubjects, setSelectedSubjects] = useState<{ [key: string]: string }>({}); // subjectId -> teacherId
+    const [selectedReportLanguages, setSelectedReportLanguages] = useState<string[]>(state.schoolDetails?.reportLanguages || []);
 
     // State for Grade Editing
     const [editingGradeScheme, setEditingGradeScheme] = useState<GradeScheme | null>(null);
@@ -71,6 +72,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
             fetchStats();
         }
     }, [activeTab, state.classes]);
+
+    // Sync report languages state when school details load
+    useEffect(() => {
+        if (state.schoolDetails?.reportLanguages) {
+            setSelectedReportLanguages(state.schoolDetails.reportLanguages);
+        }
+    }, [state.schoolDetails]);
 
     useEffect(() => {
         if (toast) {
@@ -692,14 +700,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
         setIsSaving(true);
         try {
             const formData = new FormData(e.target as HTMLFormElement);
-            const reportLanguages = Array.from(formData.getAll('reportLanguages')) as string[];
             const details = {
                 name: (formData.get('name') as string).trim(),
                 place: (formData.get('place') as string).trim(),
                 schoolCode: (formData.get('schoolCode') as string).trim(),
                 headMasterName: (formData.get('headMasterName') as string).trim(),
                 address: (formData.get('address') as string).trim(),
-                reportLanguages
+                reportLanguages: selectedReportLanguages
             };
 
             const response = await schoolAPI.update(details);
@@ -1376,8 +1383,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                             ? c.classTeacherId.name
                                             : (state.users.find((u: any) => u.id === c.classTeacherId)?.name || 'No Teacher Assigned');
 
-                                        const studentCount = state.users.filter((u: any) => u.role === UserRole.STUDENT && getId(u.classId) === c.id).length;
+                                        const classStudents = state.users.filter((u: any) => u.role === UserRole.STUDENT && getId(u.classId) === c.id);
+                                        const studentCount = classStudents.length;
+                                        const boysCount = classStudents.filter((u: any) => u.gender === 'Male').length;
+                                        const girlsCount = classStudents.filter((u: any) => u.gender === 'Female').length;
+
                                         const subjectCount = classStats[c.id]?.subjectCount || 0;
+                                        // Count exams for this class
+                                        const examCount = state.exams ? state.exams.filter((e: any) => getId(e.classId) === c.id).length : 0;
+
                                         return (
                                             <div key={c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative group hover:shadow-lg transition-all">
                                                 <div className="flex justify-between items-start mb-4">
@@ -1392,11 +1406,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                                 <h3 className="text-xl font-black text-slate-800">Class {c.name}</h3>
                                                 <p className="text-sm font-bold text-slate-400 mb-4">{teacherName}</p>
                                                 <div className="flex flex-wrap gap-2 text-xs font-black uppercase text-slate-400">
-                                                    <div className="bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-2">
-                                                        <Users size={14} /> {studentCount} Students
+                                                    <div className="bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-2" title={`${boysCount} Boys, ${girlsCount} Girls`}>
+                                                        <Users size={14} />
+                                                        <span className="flex items-center gap-1">
+                                                            <span>{studentCount}</span>
+                                                            <span className="text-slate-300 mx-1">|</span>
+                                                            <span className="text-blue-600">{boysCount} B</span>
+                                                            <span className="text-slate-300">/</span>
+                                                            <span className="text-pink-500">{girlsCount} G</span>
+                                                        </span>
                                                     </div>
                                                     <div className="bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-2">
-                                                        <BookOpen size={14} /> {subjectCount} Subjects
+                                                        <BookOpen size={14} /> {subjectCount} Subs
+                                                    </div>
+                                                    <div className="bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-2">
+                                                        <FileText size={14} /> {examCount} Exams
                                                     </div>
                                                 </div>
                                             </div>
@@ -1500,19 +1524,32 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                         <div className="space-y-3">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">AI Report Languages</label>
                             <div className="flex flex-wrap gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                                {['English', 'Tamil', 'Malayalam'].map(lang => (
-                                    <label key={lang} className="flex items-center gap-2 cursor-pointer group">
-                                        <input
-                                            type="checkbox"
-                                            name="reportLanguages"
-                                            value={lang}
-                                            defaultChecked={state.schoolDetails?.reportLanguages?.includes(lang)}
-                                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                                        />
-                                        <span className="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">{lang}</span>
-                                    </label>
-                                ))}
+                                {['English', 'Tamil', 'Hindi', 'Malayalam', 'Kannada', 'Telugu', 'Arabic'].map(lang => {
+                                    const isChecked = selectedReportLanguages.includes(lang);
+                                    return (
+                                        <label key={lang} htmlFor={`lang-${lang}`} className={`flex items-center gap-3 px-4 py-2 rounded-xl border transition-all cursor-pointer group ${isChecked ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-100'}`}>
+                                            <input
+                                                id={`lang-${lang}`}
+                                                type="checkbox"
+                                                checked={isChecked}
+                                                onChange={(e) => {
+                                                    const checked = e.target.checked;
+                                                    setSelectedReportLanguages(prev => {
+                                                        if (checked) {
+                                                            return [...prev, lang];
+                                                        } else {
+                                                            return prev.filter(l => l !== lang);
+                                                        }
+                                                    });
+                                                }}
+                                                className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                            />
+                                            <span className={`text-sm font-bold transition-colors ${isChecked ? 'text-blue-700' : 'text-slate-600 group-hover:text-blue-600'}`}>{lang}</span>
+                                        </label>
+                                    );
+                                })}
                             </div>
+                            <p className="text-[10px] text-slate-400 font-bold ml-1 italic">* Select languages for AI-generated performance reports in Progress Cards.</p>
                         </div>
                         <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black rounded-[2rem] shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                             Update School Details

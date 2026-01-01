@@ -1,9 +1,36 @@
 @import "tailwindcss";
 
+:root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #60a5fa;
+    --accent: #f59e0b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --bg-main: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 32px;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-premium: 0 10px 30px -5px rgba(37, 99, 235, 0.1);
+}
+
 body {
-    font-family: 'Inter', 'TAU-Paalai', 'Rachana', sans-serif;
+    font-family: 'Inter', 'TAU-Paalai', 'Rachana', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .report-multilingual {
@@ -12,7 +39,9 @@ body {
 
 .glass {
     background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .safe-top {
@@ -23,28 +52,44 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Base button styles for native feel */
+button {
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+button:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
 /* Mobile active state simulation */
 .btn-active:active {
-    transform: scale(0.96);
+    transform: scale(0.95);
+    background-color: rgba(37, 99, 235, 0.05);
 }
 
 /* Native scrollbars */
 ::-webkit-scrollbar {
+    width: 0px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
     width: 6px;
 }
 
-::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
     background: #e2e8f0;
     border-radius: 10px;
 }
 
 @keyframes slideInUp {
     from {
-        transform: translateY(100%);
+        transform: translateY(20px);
         opacity: 0;
     }
 
@@ -54,8 +99,24 @@ body {
     }
 }
 
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 .animate-slide-up {
-    animation: slideInUp 0.3s ease-out;
+    animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-fade-scale {
+    animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* === TABLE CELL FIX (Scoped to Reports) === */
@@ -76,9 +137,7 @@ body {
     line-height: 1.2;
     font-weight: 500;
     word-break: break-word;
-    /* Allow text wrapping */
     white-space: normal;
-    /* Allow text wrapping */
     text-align: center;
 }
 
@@ -87,4 +146,51 @@ body {
     padding-left: 6px;
     font-weight: 600;
     text-align: left;
+}
+
+/* Native Card Pattern */
+.native-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-sm);
+    padding: 1.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.native-card:active {
+    transform: scale(0.99);
+}
+
+/* Input Fields for Mobile */
+input,
+select,
+textarea {
+    -webkit-appearance: none;
+    appearance: none;
+    font-size: 16px !important;
+    /* Prevents auto-zoom on iOS */
+}
+
+/* Custom transitions */
+.page-transition-enter {
+    opacity: 0;
+    transform: translateX(20px);
+}
+
+.page-transition-enter-active {
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.page-transition-exit-active {
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 300ms, transform 300ms;
 }

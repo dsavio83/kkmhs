@@ -347,27 +347,27 @@ const MarkEntry: React.FC<MarkEntryProps> = ({ teacher, state, setState }) => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-20">
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           {activeClassId && selectedClass ? (
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-slate-400 font-bold text-sm">Class {selectedClass.name}</span>
-              <ChevronRight size={16} className="text-slate-300" />
-              <span className="text-blue-600 font-black text-sm uppercase tracking-widest">Grading</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Class {selectedClass.name}</span>
+              <ChevronRight size={12} className="text-slate-300" />
+              <span className="text-blue-600 font-black text-[10px] uppercase tracking-widest">Mark Entry</span>
             </div>
           ) : (
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Gradebook</h1>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Gradebook</h1>
           )}
-          <p className="text-slate-400 font-bold mt-1">Select Exam and Subject to enter marks</p>
+          <p className="text-slate-400 font-bold text-xs">Enter marks for exams and subjects</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-100 shadow-sm transition-all">
-            {autoSaveStatus === 'saving' && <Loader2 size={16} className="text-blue-500 animate-spin" />}
-            {autoSaveStatus === 'modified' && <CloudOff size={16} className="text-amber-500" />}
-            {autoSaveStatus === 'saved' && <Cloud size={16} className="text-green-500" />}
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-xl border border-slate-100 shadow-sm transition-all whitespace-nowrap">
+            {autoSaveStatus === 'saving' && <Loader2 size={14} className="text-blue-500 animate-spin" />}
+            {autoSaveStatus === 'modified' && <CloudOff size={14} className="text-amber-500" />}
+            {autoSaveStatus === 'saved' && <Cloud size={14} className="text-green-500" />}
 
-            <span className={`text-xs font-bold uppercase tracking-wider ${autoSaveStatus === 'saving' ? 'text-blue-600' :
+            <span className={`text-[10px] font-black uppercase tracking-wider ${autoSaveStatus === 'saving' ? 'text-blue-600' :
               autoSaveStatus === 'modified' ? 'text-amber-600' : 'text-slate-400'
               }`}>
               {autoSaveStatus === 'saving' ? 'Saving...' :
@@ -378,24 +378,26 @@ const MarkEntry: React.FC<MarkEntryProps> = ({ teacher, state, setState }) => {
 
           <button
             onClick={() => window.location.href = '/teacher/section-marks'}
-            className="px-6 py-3 bg-slate-100 text-slate-700 font-black rounded-xl border border-slate-200 flex items-center hover:bg-slate-200 hover:scale-[1.02] active:scale-95 transition-all text-sm"
+            className="w-10 h-10 md:w-auto md:px-4 md:py-2.5 bg-slate-100 text-slate-700 font-black rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-200 transition-all text-xs"
+            title="Detailed Entry Mode"
           >
-            <ClipboardList size={18} className="mr-2" /> Detailed Entry Mode
+            <ClipboardList size={18} className="md:mr-2" />
+            <span className="hidden md:inline">Detailed</span>
           </button>
 
           <button
             onClick={() => showToastMsg('Manual save triggered')}
-            className="px-6 py-3 bg-blue-600 text-white font-black rounded-xl shadow-lg shadow-blue-200/50 flex items-center hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all text-sm"
+            className="flex-1 md:flex-none px-5 py-2.5 bg-blue-600 text-white font-black rounded-xl shadow-premium flex items-center justify-center hover:bg-blue-700 transition-all text-xs"
           >
-            <Save size={18} className="mr-2" /> Save Now
+            <Save size={18} className="mr-2" /> Save
           </button>
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 ${!classId ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {!classId && (
-          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Select Class</label>
+          <div className="native-card !p-3">
+            <label className="block text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 ml-1">Class</label>
             <select
               value={internalSelectedClassId}
               onChange={(e) => {
@@ -403,7 +405,7 @@ const MarkEntry: React.FC<MarkEntryProps> = ({ teacher, state, setState }) => {
                 setSelectedExamId('');
                 setSelectedSubjectId('');
               }}
-              className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-slate-700 font-bold outline-none appearance-none"
+              className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-2.5 text-slate-700 font-bold outline-none text-sm appearance-none"
             >
               <option value="">Choose Class...</option>
               {relevantClasses.map((c: any) => (
@@ -412,8 +414,8 @@ const MarkEntry: React.FC<MarkEntryProps> = ({ teacher, state, setState }) => {
             </select>
           </div>
         )}
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Select Exam</label>
+        <div className={`native-card !p-3 ${!classId ? '' : 'md:col-span-1'}`}>
+          <label className="block text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 ml-1">Exam</label>
           <select
             value={selectedExamId}
             onChange={(e) => {
@@ -421,7 +423,7 @@ const MarkEntry: React.FC<MarkEntryProps> = ({ teacher, state, setState }) => {
               setSelectedSubjectId('');
             }}
             disabled={!activeClassId}
-            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-slate-700 font-bold outline-none appearance-none disabled:bg-slate-100"
+            className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-2.5 text-slate-700 font-bold outline-none text-sm appearance-none disabled:bg-slate-100"
           >
             <option value="">{activeClassId ? 'Choose Exam...' : 'Select Class First'}</option>
             {relevantExams.map((ex: any) => (
@@ -429,107 +431,94 @@ const MarkEntry: React.FC<MarkEntryProps> = ({ teacher, state, setState }) => {
             ))}
           </select>
         </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Select Subject</label>
+        <div className={`native-card !p-3 ${!classId ? '' : 'md:col-span-1'}`}>
+          <label className="block text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5 ml-1">Subject</label>
           <select
             value={selectedSubjectId}
             onChange={(e) => setSelectedSubjectId(e.target.value)}
             disabled={!selectedExamId}
-            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 text-slate-700 font-bold outline-none appearance-none disabled:bg-slate-100"
+            className="w-full bg-slate-50/50 border border-slate-100 rounded-xl px-4 py-2.5 text-slate-700 font-bold outline-none text-sm appearance-none disabled:bg-slate-100"
           >
             <option value="">{selectedExamId ? 'Choose Subject...' : 'Select Exam First'}</option>
             {examSubjects.map((sub: any) => (
-              <option key={sub.id} value={sub.id}>{sub.name} (Max: {sub.config.maxTe}/{sub.config.maxCe})</option>
+              <option key={sub.id} value={sub.id}>{sub.name} ({sub.config.maxTe}/{sub.config.maxCe})</option>
             ))}
           </select>
         </div>
       </div>
 
       {selectedExamId && selectedSubjectId ? (
-        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-          <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50/50 gap-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-blue-600 font-black text-xl">
+        <div className="animate-slide-up">
+          <div className="native-card !p-4 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/50 backdrop-blur-sm sticky top-[60px] z-30 shadow-sm">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-base shadow-premium">
                 {selectedClass?.name.charAt(0)}
               </div>
-              <div>
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{selectedExam.name}</span>
-                <h3 className="text-xl font-black text-slate-800 mt-1">
+              <div className="overflow-hidden">
+                <span className="text-[8px] font-black text-blue-600 uppercase tracking-[0.2em] block truncate">{selectedExam.name}</span>
+                <h3 className="text-sm font-black text-slate-900 truncate">
                   {state.subjects.find((s: any) => s.id === selectedSubjectId)?.name}
                 </h3>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-3 bg-slate-50/80 px-3 py-1.5 rounded-xl border border-slate-100">
               <button
                 onClick={() => setIncludeTe(!includeTe)}
-                className={`flex items-center gap-2 text-xs font-black uppercase tracking-wider ${includeTe ? 'text-blue-600' : 'text-slate-400'}`}
+                className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider transition-all ${includeTe ? 'text-blue-600' : 'text-slate-400'}`}
               >
-                {includeTe ? <CheckSquare size={16} /> : <Square size={16} />}
+                {includeTe ? <CheckSquare size={14} /> : <Square size={14} />}
                 TE ({maxTeMarks})
               </button>
-              <div className="w-px h-4 bg-slate-200"></div>
+              <div className="w-px h-3 bg-slate-200"></div>
               <button
                 onClick={() => setIncludeCe(!includeCe)}
-                className={`flex items-center gap-2 text-xs font-black uppercase tracking-wider ${includeCe ? 'text-blue-600' : 'text-slate-400'}`}
+                className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider transition-all ${includeCe ? 'text-blue-600' : 'text-slate-400'}`}
               >
-                {includeCe ? <CheckSquare size={16} /> : <Square size={16} />}
+                {includeCe ? <CheckSquare size={14} /> : <Square size={14} />}
                 CE ({maxCeMarks})
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto no-scrollbar">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50/50 text-slate-400 uppercase text-[10px] font-black tracking-widest">
-                <tr>
-                  <th className="px-8 py-5">Full Name</th>
-                  <th className="px-8 py-5 text-center text-purple-600">Attendance %</th>
-                  {includeTe && <th className="px-8 py-5 text-center">TE Marks</th>}
-                  {includeCe && <th className="px-8 py-5 text-center">CE Marks</th>}
-                  <th className="px-8 py-5 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {students.map((student: any) => {
-                  const mark = state.marks.find((m: any) =>
-                    getId(m.studentId) === student.id &&
-                    getId(m.subjectId) === selectedSubjectId &&
-                    getId(m.examId) === selectedExamId
-                  );
+          <div className="space-y-3">
+            {students.map((student: any) => {
+              const mark = state.marks.find((m: any) =>
+                getId(m.studentId) === student.id &&
+                getId(m.subjectId) === selectedSubjectId &&
+                getId(m.examId) === selectedExamId
+              );
 
-                  const att = state.attendance.find((a: any) =>
-                    getId(a.examId) === selectedExamId && getId(a.studentId) === student.id
-                  );
+              const att = state.attendance.find((a: any) =>
+                getId(a.examId) === selectedExamId && getId(a.studentId) === student.id
+              );
 
-                  return (
-                    <MarkInputRow
-                      key={student.id}
-                      student={student}
-                      teMark={mark?.teMark}
-                      ceMark={mark?.ceMark}
-                      attendance={att?.percentage}
-                      teEnabled={includeTe}
-                      ceEnabled={includeCe}
-                      maxTeMarks={maxTeMarks}
-                      maxCeMarks={maxCeMarks}
-                      onUpdate={handleMarkUpdate}
-                      onDetailedEntry={(sid) => setDetailedStudentId(sid)}
-                      hasMarkSections={(activeConfig?.markSections || []).length > 0}
-                      isLocked={mark?.isLocked}
-                    />
-                  );
-                })}
-              </tbody>
-            </table>
+              return (
+                <MarkInputRow
+                  key={student.id}
+                  student={student}
+                  teMark={mark?.teMark}
+                  ceMark={mark?.ceMark}
+                  attendance={att?.percentage}
+                  teEnabled={includeTe}
+                  ceEnabled={includeCe}
+                  maxTeMarks={maxTeMarks}
+                  maxCeMarks={maxCeMarks}
+                  onUpdate={handleMarkUpdate}
+                  onDetailedEntry={(sid) => setDetailedStudentId(sid)}
+                  hasMarkSections={(activeConfig?.markSections || []).length > 0}
+                  isLocked={mark?.isLocked}
+                />
+              );
+            })}
           </div>
         </div>
       ) : (
-        <div className="bg-white p-24 rounded-[3rem] text-center border-4 border-dashed border-slate-100 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 bg-blue-50 rounded-[2rem] flex items-center justify-center mb-6 text-blue-600">
-            <Calendar size={32} />
+        <div className="native-card py-24 text-center border-2 border-dashed border-slate-200 flex flex-col items-center justify-center opacity-60">
+          <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center mb-4 text-slate-400">
+            <Calendar size={28} />
           </div>
-          <p className="text-slate-400 font-black uppercase tracking-widest text-sm">Select an exam context to enter marks.</p>
+          <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Select context to start entry</p>
         </div>
       )}
 

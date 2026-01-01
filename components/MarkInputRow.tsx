@@ -1,5 +1,6 @@
 
 import React, { useRef } from 'react';
+import { ClipboardList } from 'lucide-react';
 
 interface MarkInputRowProps {
   student: any;
@@ -99,90 +100,97 @@ const MarkInputRow: React.FC<MarkInputRowProps> = React.memo(({
   };
 
   return (
-    <tr className={`hover:bg-slate-50 transition-colors border-b border-slate-100 ${isRowInvalid ? 'bg-red-50/30' : ''}`}>
-      <td className="px-6 py-4 align-top">
-        <div className="flex items-center mt-2">
-          <div className="text-sm font-bold text-slate-900">{student.name}</div>
-          <div className="text-[10px] font-black text-slate-400 ml-2 uppercase tracking-tighter">#{student.admissionNo}</div>
-          {isLocked && (
-            <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[8px] font-black rounded uppercase">Locked</span>
-          )}
+    <div className={`native-card !p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${isRowInvalid ? 'bg-red-50/30 border-red-100' : ''}`}>
+      <div className="flex items-center space-x-3">
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black ${student.gender === 'Female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
+          {student.name.charAt(0)}
         </div>
-      </td>
-
-      <td className="px-6 py-3 align-top text-center">
-        <div className="relative inline-block">
-          <input
-            type="text"
-            name="att"
-            maxLength={3}
-            value={attendance ?? ''}
-            onChange={(e) => handleInputChange(e, 'att')}
-            disabled={isLocked}
-            className="w-16 px-2 py-2.5 border border-slate-200 bg-purple-50/50 text-purple-700 rounded-xl text-center font-bold outline-none focus:ring-2 focus:ring-purple-200 transition-all shadow-sm disabled:opacity-50"
-            placeholder="%"
-          />
-        </div>
-      </td>
-
-      {teEnabled && (
-        <td className="px-6 py-3 align-top text-center">
-          <div className="relative inline-block">
-            <input
-              ref={teRef}
-              name="te"
-              type="text"
-              maxLength={4}
-              value={teMark ?? ''}
-              onChange={(e) => handleInputChange(e, 'te')}
-              disabled={isLocked && !hasMarkSections} // Allow clicking if has sections? No, let's keep it disabled if locked.
-              className={`w-24 px-3 py-2.5 border ${isTeInvalid ? 'border-red-500 bg-red-50 text-red-600 focus:ring-red-200' : getInputStyle(teMark, maxTeMarks)} rounded-xl text-center font-black outline-none transition-all shadow-sm disabled:opacity-50`}
-              placeholder={`Max ${maxTeMarks}`}
-            />
+        <div className="overflow-hidden">
+          <div className="flex items-center">
+            <p className="font-bold text-slate-800 text-sm truncate">{student.name}</p>
+            {isLocked && <span className="ml-2 px-1 py-0.5 bg-amber-100 text-amber-600 text-[7px] font-black rounded uppercase">Locked</span>}
           </div>
-        </td>
-      )}
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">#{student.admissionNo} • {student.gender}</p>
+        </div>
+      </div>
 
-      {ceEnabled && (
-        <td className="px-6 py-3 align-top text-center">
-          <div className="relative inline-block">
+      <div className="flex items-center justify-between sm:justify-end gap-2 flex-1">
+        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+          {/* Attendance */}
+          <div className="flex flex-col items-center">
+            <span className="text-[7px] font-black text-purple-400 uppercase mb-0.5 tracking-widest">Att %</span>
             <input
-              ref={ceRef}
-              name="ce"
               type="text"
-              maxLength={4}
-              value={ceMark ?? ''}
-              onChange={(e) => handleInputChange(e, 'ce')}
+              name="att"
+              maxLength={3}
+              value={attendance ?? ''}
+              onChange={(e) => handleInputChange(e, 'att')}
               disabled={isLocked}
-              className={`w-24 px-3 py-2.5 border ${isCeInvalid ? 'border-red-500 bg-red-50 text-red-600 focus:ring-red-200' : getInputStyle(ceMark, maxCeMarks)} rounded-xl text-center font-black outline-none transition-all shadow-sm disabled:opacity-50`}
-              placeholder={`Max ${maxCeMarks}`}
+              className="w-12 py-2 border border-slate-100 bg-slate-50 text-purple-700 rounded-lg text-center font-bold text-xs outline-none focus:ring-2 focus:ring-purple-200"
+              placeholder="%"
             />
           </div>
-        </td>
-      )}
 
-      <td className="px-6 py-4 text-right align-top">
-        <div className="flex flex-col items-end gap-2">
-          {maxTotal > 0 ? (
-            <span className={`inline-block px-4 py-1 mt-1 rounded-lg font-black text-sm ${total >= (maxTotal) * 0.35 ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'}`}>
-              {total} <span className="text-[9px] text-slate-400 font-normal">/ {maxTotal}</span>
-            </span>
-          ) : (
-            <span className="text-slate-300">-</span>
+          <div className="w-px h-6 bg-slate-100 mx-0.5"></div>
+
+          {/* TE Mark */}
+          {teEnabled && (
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">TE Mark</span>
+              <input
+                ref={teRef}
+                name="te"
+                type="text"
+                maxLength={4}
+                value={teMark ?? ''}
+                onChange={(e) => handleInputChange(e, 'te')}
+                disabled={isLocked && !hasMarkSections}
+                className={`w-14 py-2 border ${isTeInvalid ? 'border-red-300 bg-red-50 text-red-600' : 'border-slate-100 bg-slate-50'} rounded-lg text-center font-black text-xs outline-none focus:ring-2 focus:ring-blue-100`}
+                placeholder={`/${maxTeMarks}`}
+              />
+            </div>
           )}
 
-          {hasMarkSections && (
-            <button
-              onClick={() => onDetailedEntry(student.id)}
-              className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-lg uppercase tracking-wider hover:bg-blue-600 hover:text-white transition-all border border-blue-100"
-            >
-              Detailed
-            </button>
+          {/* CE Mark */}
+          {ceEnabled && (
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] font-black text-slate-400 uppercase mb-0.5 tracking-widest">CE Mark</span>
+              <input
+                ref={ceRef}
+                name="ce"
+                type="text"
+                maxLength={4}
+                value={ceMark ?? ''}
+                onChange={(e) => handleInputChange(e, 'ce')}
+                disabled={isLocked}
+                className={`w-14 py-2 border ${isCeInvalid ? 'border-red-300 bg-red-50 text-red-600' : 'border-slate-100 bg-slate-50'} rounded-lg text-center font-black text-xs outline-none focus:ring-2 focus:ring-blue-100`}
+                placeholder={`/${maxCeMarks}`}
+              />
+            </div>
           )}
         </div>
-      </td>
-    </tr>
+
+        <div className="flex flex-col items-end min-w-[50px]">
+          <span className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-widest">Total</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-black ${total >= (maxTotal) * 0.35 ? 'text-emerald-600' : 'text-red-600'}`}>
+              {total}<span className="text-[10px] text-slate-300 font-normal">/</span>{maxTotal}
+            </span>
+            {hasMarkSections && (
+              <button
+                onClick={() => onDetailedEntry(student.id)}
+                className="w-7 h-7 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                title="Detailed Entry"
+              >
+                <ClipboardList size={12} />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
+
 });
 
 export default MarkInputRow;
