@@ -44,4 +44,4 @@ classRoomSchema.set('toJSON', {
   }
 });
 
-module.exports = mongoose.model('ClassRoom', classRoomSchema);
+module.exports = mongoose.models.ClassRoom || mongoose.model('ClassRoom', classRoomSchema);
