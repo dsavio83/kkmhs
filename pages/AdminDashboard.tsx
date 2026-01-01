@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { User, UserRole, ClassRoom, Subject, GradeScheme, GradeBoundary } from '../types';
 import {
     Plus, Edit2, Trash2, Search, Filter,
@@ -23,6 +23,7 @@ const getId = (obj: any) => {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
     const location = useLocation();
+    const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const jsonInputRef = useRef<HTMLInputElement>(null);
 
@@ -105,6 +106,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
             setSelectedSubjects({});
         }
     }, [editingItem, activeTab, showModal]);
+
+    // Handle auto-open modal from navigation state
+    useEffect(() => {
+        if (location.state && (location.state as any).openModal) {
+            setEditingItem(null);
+            setEditingGradeScheme(null);
+            setShowModal(true);
+            // Clear the state to prevent reopening on reload (optional but good practice)
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
 
     // --- DATA MANAGEMENT (JSON Backup/Restore) ---
 
@@ -1146,26 +1158,228 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
             </div>
 
             {activeTab === 'stats' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600"><Users size={32} /></div>
-                        <div>
-                            <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Total Teachers</p>
-                            <p className="text-3xl font-black text-slate-900">{state.users.filter((u: any) => u.role === UserRole.TEACHER).length}</p>
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+
+                    {/* Top Row Stats - Teachers, Classes, Exams, Subjects */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:rotate-12 transition-transform">
+                                    <Users size={28} />
+                                </div>
+                                <span className="bg-blue-100 text-blue-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">Teachers</span>
+                            </div>
+                            <h3 className="text-4xl font-black text-slate-900 mb-1">
+                                {state.users.filter((u: any) => u.role === UserRole.TEACHER).length}
+                            </h3>
+                            <p className="text-slate-400 font-bold text-xs">Active Staff Members</p>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 group-hover:rotate-12 transition-transform">
+                                    <Building size={28} />
+                                </div>
+                                <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">Classes</span>
+                            </div>
+                            <h3 className="text-4xl font-black text-slate-900 mb-1">
+                                {state.classes.length}
+                            </h3>
+                            <p className="text-slate-400 font-bold text-xs">Total Classrooms</p>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:rotate-12 transition-transform">
+                                    <FileText size={28} />
+                                </div>
+                                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">Exams</span>
+                            </div>
+                            <h3 className="text-4xl font-black text-slate-900 mb-1">
+                                {state.exams ? state.exams.length : 0}
+                            </h3>
+                            <p className="text-slate-400 font-bold text-xs">Created Exams</p>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="w-14 h-14 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-600 group-hover:rotate-12 transition-transform">
+                                    <BookOpen size={28} />
+                                </div>
+                                <span className="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">Subjects</span>
+                            </div>
+                            <h3 className="text-4xl font-black text-slate-900 mb-1">
+                                {state.subjects.length}
+                            </h3>
+                            <p className="text-slate-400 font-bold text-xs">Curriculum Subjects</p>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600"><GraduationCap size={32} /></div>
-                        <div>
-                            <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Total Classes</p>
-                            <p className="text-3xl font-black text-slate-900">{state.classes.length}</p>
-                        </div>
+
+                    {/* Quick Links */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {[
+                            {
+                                label: 'Create Class',
+                                icon: Building,
+                                color: 'text-purple-600',
+                                bg: 'bg-purple-50',
+                                action: () => {
+                                    const current = location.pathname.split('/').slice(0, -1).join('/') || '/admin'; // fallback
+                                    // Heuristic: if current ends with 'stats' or 'admin', assume base admin path
+                                    const base = location.pathname.endsWith('/stats') ? location.pathname.replace('/stats', '') : location.pathname;
+                                    navigate(`${base === '/' ? '/admin' : base}/classes`.replace('//', '/'), { state: { openModal: true } });
+                                }
+                            },
+                            {
+                                label: 'Add Teacher',
+                                icon: UserPlus,
+                                color: 'text-blue-600',
+                                bg: 'bg-blue-50',
+                                action: () => {
+                                    const base = location.pathname.endsWith('/stats') ? location.pathname.replace('/stats', '') : location.pathname;
+                                    navigate(`${base === '/' ? '/admin' : base}/teachers`.replace('//', '/'), { state: { openModal: true } });
+                                }
+                            },
+                            {
+                                label: 'Add Subject',
+                                icon: BookOpen,
+                                color: 'text-pink-600',
+                                bg: 'bg-pink-50',
+                                action: () => {
+                                    const base = location.pathname.endsWith('/stats') ? location.pathname.replace('/stats', '') : location.pathname;
+                                    navigate(`${base === '/' ? '/admin' : base}/subjects`.replace('//', '/'), { state: { openModal: true } });
+                                }
+                            },
+                            {
+                                label: 'Grade Config',
+                                icon: Layers,
+                                color: 'text-indigo-600',
+                                bg: 'bg-indigo-50',
+                                action: () => {
+                                    const base = location.pathname.endsWith('/stats') ? location.pathname.replace('/stats', '') : location.pathname;
+                                    navigate(`${base === '/' ? '/admin' : base}/grades`.replace('//', '/'));
+                                }
+                            },
+                            {
+                                label: 'School Setup',
+                                icon: Settings,
+                                color: 'text-slate-600',
+                                bg: 'bg-slate-50',
+                                action: () => {
+                                    const base = location.pathname.endsWith('/stats') ? location.pathname.replace('/stats', '') : location.pathname;
+                                    navigate(`${base === '/' ? '/admin' : base}/school`.replace('//', '/'));
+                                }
+                            },
+                            {
+                                label: 'Backup Data',
+                                icon: Database,
+                                color: 'text-emerald-600',
+                                bg: 'bg-emerald-50',
+                                action: () => {
+                                    const base = location.pathname.endsWith('/stats') ? location.pathname.replace('/stats', '') : location.pathname;
+                                    navigate(`${base === '/' ? '/admin' : base}/data`.replace('//', '/'));
+                                }
+                            },
+                        ].map((link, i) => (
+                            <button
+                                key={i}
+                                onClick={link.action}
+                                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:scale-105 active:scale-95 transition-all flex flex-col items-center gap-3 group"
+                            >
+                                <div className={`w-10 h-10 ${link.bg} rounded-xl flex items-center justify-center ${link.color} group-hover:rotate-6 transition-transform`}>
+                                    <link.icon size={20} />
+                                </div>
+                                <span className="text-xs font-bold text-slate-700">{link.label}</span>
+                            </button>
+                        ))}
                     </div>
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex items-center gap-4">
-                        <div className="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center text-pink-600"><BookOpen size={32} /></div>
-                        <div>
-                            <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Subjects</p>
-                            <p className="text-3xl font-black text-slate-900">{state.subjects.length}</p>
+
+                    {/* Class Grouping & Student Breakdown */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-black text-slate-800">Class-wise Analysis</h2>
+                            <div className="h-px flex-1 bg-slate-100"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-6">
+                            {(() => {
+                                // Group Classes by Grade Level
+                                const gradeOrder = ['Pre-KG', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+                                const groupedClasses: any = {};
+
+                                state.classes.forEach((c: any) => {
+                                    if (!groupedClasses[c.gradeLevel]) groupedClasses[c.gradeLevel] = [];
+                                    groupedClasses[c.gradeLevel].push(c);
+                                });
+
+                                return gradeOrder.map(grade => {
+                                    const classes = groupedClasses[grade];
+                                    if (!classes || classes.length === 0) return null;
+
+                                    return (
+                                        <div key={`grade-section-${grade}`} className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
+                                            <div className="bg-slate-50/50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-slate-200">
+                                                        {grade.replace(/Grade\s?/i, '')}
+                                                    </div>
+                                                    <h3 className="text-lg font-black text-slate-800">Grade {grade}</h3>
+                                                </div>
+                                                <span className="text-xs font-bold text-slate-400 bg-white px-3 py-1 rounded-lg border border-slate-100 shadow-sm">
+                                                    {classes.length} Section{classes.length > 1 ? 's' : ''}
+                                                </span>
+                                            </div>
+
+                                            <div className="divide-y divide-slate-50">
+                                                <div className="grid grid-cols-4 px-6 py-3 bg-slate-50/30 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                    <div>Class Name</div>
+                                                    <div className="text-center">Total Students</div>
+                                                    <div className="text-center text-blue-400">Boys</div>
+                                                    <div className="text-center text-pink-400">Girls</div>
+                                                </div>
+                                                {classes.map((c: any) => {
+                                                    const students = state.users.filter((u: any) => u.role === UserRole.STUDENT && getId(u.classId) === c.id);
+                                                    const boys = students.filter((u: any) => u.gender === 'Male').length;
+                                                    const girls = students.filter((u: any) => u.gender === 'Female').length;
+
+                                                    // Calculate percentage for progress bars
+                                                    const total = students.length || 1; // avoid /0
+                                                    const boysPct = Math.round((boys / total) * 100);
+                                                    const girlsPct = Math.round((girls / total) * 100);
+
+                                                    return (
+                                                        <div key={c.id} className="grid grid-cols-4 px-6 py-4 items-center hover:bg-slate-50 transition-colors group">
+                                                            <div>
+                                                                <span className="text-sm font-black text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg group-hover:bg-white group-hover:shadow-sm transition-all">
+                                                                    {c.name}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex justify-center">
+                                                                <span className="text-sm font-black text-slate-900 flex items-center gap-2">
+                                                                    <Users size={14} className="text-slate-300" />
+                                                                    {students.length}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                                <span className="text-sm font-bold text-blue-600">{boys}</span>
+                                                                <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className="h-full bg-blue-500 rounded-full" style={{ width: `${boysPct}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                                <span className="text-sm font-bold text-pink-500">{girls}</span>
+                                                                <div className="w-12 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                                                    <div className="h-full bg-pink-500 rounded-full" style={{ width: `${girlsPct}%` }}></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                     </div>
                 </div>
