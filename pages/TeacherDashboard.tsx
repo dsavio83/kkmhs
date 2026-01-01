@@ -300,6 +300,18 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, state, set
                     const hasClassCols = lowerHeader.includes('class') || lowerHeader.includes('division') || lowerHeader.includes('section');
                     const offset = hasClassCols ? 2 : 0;
 
+                    const gradeLevel = hasClassCols ? cols[0] : '';
+                    const sectionName = hasClassCols ? cols[1].toUpperCase() : '';
+
+                    // Find class from CSV if possible, otherwise use primaryClass
+                    let targetClassId = getId(primaryClass);
+                    if (hasClassCols) {
+                        const foundClass = state.classes.find((c: any) =>
+                            c.gradeLevel === gradeLevel && c.section === sectionName
+                        );
+                        if (foundClass) targetClassId = foundClass.id;
+                    }
+
                     const name = cols[offset + 0];
                     const admissionNo = cols[offset + 1];
                     const gender = cols[offset + 2];
@@ -321,7 +333,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, state, set
                         password: mobile, // default password as mobile
                         gender: (gender === 'Male' || gender === 'Female') ? gender : 'Male',
                         role: UserRole.STUDENT,
-                        classId: getId(primaryClass),
+                        classId: targetClassId,
                         category: (category as any) || 'General',
                         caste: caste || undefined,
                         email: email || undefined,

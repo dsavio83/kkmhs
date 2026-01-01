@@ -368,6 +368,53 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
 
     // --- CRUD Handlers (Updated for safety) ---
 
+    const handleSaveStudent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const formData = new FormData(e.target as HTMLFormElement);
+        const name = formData.get('name') as string;
+        const admissionNo = formData.get('admissionNo') as string;
+        const classId = formData.get('classId') as string;
+        const gender = formData.get('gender') as any;
+        const mobile = formData.get('mobile') as string;
+
+        setIsSaving(true);
+        try {
+            const studentData = {
+                name,
+                username: admissionNo,
+                admissionNo,
+                classId,
+                gender,
+                mobile,
+                role: UserRole.STUDENT,
+                password: mobile || admissionNo // Default password
+            };
+
+            if (editingItem) {
+                const response = await userAPI.update(editingItem.id, studentData);
+                setState((prev: any) => ({
+                    ...prev,
+                    users: prev.users.map((u: any) => u.id === editingItem.id ? response.data : u)
+                }));
+                showToast('✅ Student updated successfully!', 'success');
+            } else {
+                const response = await userAPI.create(studentData);
+                setState((prev: any) => ({
+                    ...prev,
+                    users: [...prev.users, response.data]
+                }));
+                showToast('✅ Student created successfully!', 'success');
+            }
+            setShowModal(false);
+            setEditingItem(null);
+        } catch (error: any) {
+            console.error('Failed to save student:', error);
+            showToast(error.response?.data?.message || 'Failed to save student', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const handleSaveTeacher = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -896,9 +943,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     {activeTab === 'grades' ? renderGradeEditor() : (
                         <form onSubmit={
                             activeTab === 'teachers' ? handleSaveTeacher :
-                                activeTab === 'classes' ? handleSaveClass :
-                                    handleSaveSubject
+                                activeTab === 'students' ? handleSaveStudent :
+                                    activeTab === 'classes' ? handleSaveClass :
+                                        handleSaveSubject
                         } className="p-8 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+
+                            {activeTab === 'students' && (
+                                <>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-slate-500 uppercase">Name</label>
+                                        <input name="name" defaultValue={editingItem?.name} required className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-500 uppercase">Admission No</label>
+                                            <input name="admissionNo" defaultValue={editingItem?.admissionNo} required className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-500 uppercase">Class</label>
+                                            <select name="classId" defaultValue={getId(editingItem?.classId)} required className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold">
+                                                <option value="">Select Class</option>
+                                                {state.classes.map((c: any) => (
+                                                    <option key={`stu-class-${c.id}`} value={c.id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-500 uppercase">Gender</label>
+                                            <select name="gender" defaultValue={editingItem?.gender} className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold">
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-slate-500 uppercase">Mobile</label>
+                                            <input name="mobile" defaultValue={editingItem?.mobile} className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold" />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
                             {activeTab === 'teachers' && (
                                 <>
@@ -1136,6 +1221,71 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                 Reset App
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'students' && (
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-slate-50 flex justify-between items-center gap-4">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                            <input
+                                placeholder="Search students..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <input type="file" id="studentImportInput" onChange={handleImportStudents} accept=".csv" className="hidden" />
+                            <button onClick={() => document.getElementById('studentImportInput')?.click()} className="p-3 bg-slate-50 text-slate-600 rounded-xl font-bold hover:bg-slate-100" title="Import Students"><Upload size={18} /></button>
+                            <button onClick={handleExportStudents} className="p-3 bg-slate-50 text-slate-600 rounded-xl font-bold hover:bg-slate-100" title="Export Students"><Download size={18} /></button>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <tr>
+                                    <th className="px-6 py-4">Name</th>
+                                    <th className="px-6 py-4">ADM No</th>
+                                    <th className="px-6 py-4">Class</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50">
+                                {state.users.filter((u: any) => u.role === UserRole.STUDENT && (u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.admissionNo?.toLowerCase().includes(searchTerm.toLowerCase()))).map((s: any) => {
+                                    const sClass = state.classes.find((c: any) => c.id === getId(s.classId));
+                                    return (
+                                        <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-4 font-bold text-slate-700">{s.name}</td>
+                                            <td className="px-6 py-4 font-bold text-slate-500">{s.admissionNo}</td>
+                                            <td className="px-6 py-4">
+                                                <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded text-[10px] font-black uppercase">
+                                                    {sClass?.name || 'No Class'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => { setEditingItem(s); setShowModal(true); }}
+                                                    disabled={deletingId !== null}
+                                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg mr-2"
+                                                >
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteItem('users', s.id)}
+                                                    disabled={deletingId !== null}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}
