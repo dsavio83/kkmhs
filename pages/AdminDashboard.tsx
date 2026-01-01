@@ -160,10 +160,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
             showToast("No teachers to export.", 'error');
             return;
         }
-        const headers = ["Name", "Username", "Password", "Mobile", "Email", "DOB"];
-        const rows = teachers.map((t: any) => [
-            `"${t.name}"`, `"${t.username}"`, `"${t.password || ''}"`, `"${t.mobile || ''}"`, `"${t.email || ''}"`, `"${t.dob || ''}"`
-        ]);
+        const headers = ["Class", "Section", "Name", "Username", "Password", "Mobile", "Email", "DOB"];
+        const rows = teachers.map((t: any) => {
+            const tClass = state.classes.find((c: any) => getId(c.classTeacherId) === t.id);
+            return [
+                `"${tClass?.gradeLevel || ''}"`, `"${tClass?.section || ''}"`,
+                `"${t.name}"`, `"${t.username}"`, `"${t.password || ''}"`, `"${t.mobile || ''}"`, `"${t.email || ''}"`, `"${t.dob || ''}"`
+            ];
+        });
 
         const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map((e: any[]) => e.join(",")).join("\n");
         const encodedUri = encodeURI(csvContent);
@@ -202,13 +206,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
                     if (cols.length < 2) continue;
 
+                    const hasClassCols = lines[0].toLowerCase().includes('class');
+                    const offset = hasClassCols ? 2 : 0;
+
                     const teacherData = {
-                        name: cols[0],
-                        username: cols[1],
-                        password: cols[2] || '123456',
-                        mobile: cols[3] || '',
-                        email: cols[4] || '',
-                        dob: cols[5] || '',
+                        name: cols[offset + 0],
+                        username: cols[offset + 1],
+                        password: cols[offset + 2] || '123456',
+                        mobile: cols[offset + 3] || '',
+                        email: cols[offset + 4] || '',
+                        dob: cols[offset + 5] || '',
                         role: UserRole.TEACHER
                     };
 

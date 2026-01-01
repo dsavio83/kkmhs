@@ -238,9 +238,23 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, state, set
             showToast("No students to export.", 'error');
             return;
         }
-        // ... same csv logic ...
-        const headers = ["Name", "AdmissionNo", "Gender", "Category", "Caste", "Mobile", "Email", "Transport", "DOB", "Address"];
-        const rows = myStudents.map((s: any) => [`"${s.name}"`, `"${s.admissionNo}"`, s.gender, s.category, `"${s.caste || ''}"`, s.mobile, `"${s.email || ''}"`, `"${s.transportMode || ''}"`, s.dob, `"${s.address || ''}"`]);
+
+        const headers = ["Class", "Section", "Name", "AdmissionNo", "Gender", "Category", "Caste", "Mobile", "Email", "Transport", "DOB", "Address"];
+        const rows = myStudents.map((s: any) => [
+            `"${primaryClass.gradeLevel}"`,
+            `"${primaryClass.section}"`,
+            `"${s.name}"`,
+            `"${s.admissionNo}"`,
+            `"${s.gender}"`,
+            `"${s.category}"`,
+            `"${s.caste || ''}"`,
+            `"${s.mobile}"`,
+            `"${s.email || ''}"`,
+            `"${s.transportMode || ''}"`,
+            `"${s.dob}"`,
+            `"${s.address || ''}"`
+        ]);
+
         const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map((e: any[]) => e.join(",")).join("\n");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -272,22 +286,47 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ teacher, state, set
                 for (let i = startIndex; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
-                    const cols = line.split(',').map(c => c.replace(/"/g, '').trim());
-                    if (cols.length < 2) continue;
 
-                    const admissionNo = cols[1];
-                    const mobile = cols[3] || admissionNo;
+                    // Simple split by comma, handling potential quoted values manually for basic fields
+                    // In a production app, a proper CSV parser library like papaparse would be better
+                    const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
+
+                    if (cols.length < 4) continue;
+
+                    // New format with Class and Section at [0] and [1]
+                    // [0]:Class, [1]:Section, [2]:Name, [3]:AdmissionNo, [4]:Gender, [5]:Category, [6]:Caste, [7]:Mobile, [8]:Email, [9]:Transport, [10]:DOB, [11]:Address
+
+                    const hasClassCols = lines[0].toLowerCase().includes('class');
+                    const offset = hasClassCols ? 2 : 0;
+
+                    const name = cols[offset + 0];
+                    const admissionNo = cols[offset + 1];
+                    const gender = cols[offset + 2];
+                    const category = cols[offset + 3];
+                    const caste = cols[offset + 4];
+                    const mobile = cols[offset + 5] || admissionNo;
+                    const email = cols[offset + 6];
+                    const transport = cols[offset + 7];
+                    const dob = cols[offset + 8];
+                    const address = cols[offset + 9];
+
+                    if (!name || !admissionNo) continue;
 
                     const studentData = {
-                        name: cols[0],
+                        name,
                         username: admissionNo,
                         admissionNo: admissionNo,
                         mobile: mobile,
                         password: mobile, // default password as mobile
-                        gender: (cols[2] === 'Male' || cols[2] === 'Female') ? cols[2] as any : 'Male',
+                        gender: (gender === 'Male' || gender === 'Female') ? gender : 'Male',
                         role: UserRole.STUDENT,
                         classId: getId(primaryClass),
-                        category: (cols[4] as any) || 'General'
+                        category: (category as any) || 'General',
+                        caste: caste || undefined,
+                        email: email || undefined,
+                        transportMode: transport as any || undefined,
+                        dob: dob || undefined,
+                        address: address || undefined
                     };
 
                     try {
