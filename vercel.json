@@ -20,28 +20,36 @@
       "destination": "/backend/api/auth.js"
     },
     {
-      "source": "/api/users/(.*)",
+      "source": "/api/users(.*)",
       "destination": "/backend/api/users.js"
     },
     {
-      "source": "/api/classes/(.*)",
+      "source": "/api/classes(.*)",
       "destination": "/backend/api/classes.js"
     },
     {
-      "source": "/api/subjects/(.*)",
+      "source": "/api/subjects(.*)",
       "destination": "/backend/api/subjects.js"
     },
     {
-      "source": "/api/exams/(.*)",
+      "source": "/api/exams(.*)",
       "destination": "/backend/api/exams.js"
     },
     {
-      "source": "/api/marks/(.*)",
+      "source": "/api/marks(.*)",
       "destination": "/backend/api/marks.js"
     },
     {
-      "source": "/api/grades/(.*)",
+      "source": "/api/grades(.*)",
       "destination": "/backend/api/grades.js"
+    },
+    {
+      "source": "/api/attendance(.*)",
+      "destination": "/backend/api/attendance.js"
+    },
+    {
+      "source": "/api/school(.*)",
+      "destination": "/backend/api/school.js"
     },
     {
       "source": "/api/health",

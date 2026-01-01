@@ -36,14 +36,19 @@ const initialState: AppState = {
 export const getAppState = (): AppState => {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
-    const parsed = JSON.parse(data);
-    // Ensure new fields exist if loading from old localstorage structure
-    if (!parsed.assignments) parsed.assignments = SEED_ASSIGNMENTS;
-    if (!parsed.exams) parsed.exams = [];
-    if (!parsed.attendance) parsed.attendance = [];
-    if (!parsed.gradeSchemes) parsed.gradeSchemes = initialState.gradeSchemes;
-    if (!parsed.schoolDetails) parsed.schoolDetails = initialState.schoolDetails;
-    return parsed;
+    try {
+      const parsed = JSON.parse(data);
+      // Ensure new fields exist if loading from old localstorage structure
+      if (!parsed.assignments) parsed.assignments = SEED_ASSIGNMENTS;
+      if (!parsed.exams) parsed.exams = [];
+      if (!parsed.attendance) parsed.attendance = [];
+      if (!parsed.gradeSchemes) parsed.gradeSchemes = initialState.gradeSchemes;
+      if (!parsed.schoolDetails) parsed.schoolDetails = initialState.schoolDetails;
+      return parsed;
+    } catch (e) {
+      console.error('Failed to parse app state from localStorage:', e);
+      return initialState;
+    }
   }
   return initialState;
 };

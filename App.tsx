@@ -30,7 +30,7 @@ const App: React.FC = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      console.log('Fetching data from API...');
+      console.log('Fetching all app data from API...');
 
       // Fetch all data in parallel
       const [
@@ -52,40 +52,31 @@ const App: React.FC = () => {
         classAPI.getAllAssignments().catch(err => { console.error('Assignments fetch error:', err); return { data: [] }; }),
         attendanceAPI.getAll().catch(err => { console.error('Attendance fetch error:', err); return { data: [] }; }),
         gradeAPI.getAll().catch(err => { console.error('Grades fetch error:', err); return { data: [] }; }),
-        schoolAPI.get().catch(err => { console.error('School fetch error:', err); return { data: {} }; })
+        schoolAPI.get().catch(err => { console.error('School fetch error:', err); return { data: null }; })
       ]);
 
-      console.log('API Data fetched:', {
-        users: usersRes.data.length,
-        classes: classesRes.data.length,
-        subjects: subjectsRes.data.length,
-        exams: examsRes.data.length,
-        marks: marksRes.data.length,
-        assignments: assignmentsRes.data.length,
-        attendance: attendanceRes.data.length,
-        grades: gradesRes.data.length
-      });
+      console.log('API Data fetched successfully');
 
-      // Update state with fetched data
+      // Update state with fetched data, ensuring we don't overwrite with nulls
       setAppState(prev => ({
         ...prev,
-        users: usersRes.data || [],
-        classes: classesRes.data || [],
-        subjects: subjectsRes.data || [],
-        exams: examsRes.data || [],
-        marks: marksRes.data || [],
-        assignments: assignmentsRes.data || [],
-        attendance: attendanceRes.data || [],
-        gradeSchemes: gradesRes.data || [],
-        schoolDetails: schoolRes.data || prev.schoolDetails
+        users: Array.isArray(usersRes.data) ? usersRes.data : prev.users,
+        classes: Array.isArray(classesRes.data) ? classesRes.data : prev.classes,
+        subjects: Array.isArray(subjectsRes.data) ? subjectsRes.data : prev.subjects,
+        exams: Array.isArray(examsRes.data) ? examsRes.data : prev.exams,
+        marks: Array.isArray(marksRes.data) ? marksRes.data : prev.marks,
+        assignments: Array.isArray(assignmentsRes.data) ? assignmentsRes.data : prev.assignments,
+        attendance: Array.isArray(attendanceRes.data) ? attendanceRes.data : prev.attendance,
+        gradeSchemes: Array.isArray(gradesRes.data) ? gradesRes.data : prev.gradeSchemes,
+        schoolDetails: (schoolRes.data && typeof schoolRes.data === 'object' && Object.keys(schoolRes.data).length > 0) 
+          ? schoolRes.data 
+          : prev.schoolDetails
       }));
 
       setDataLoaded(true);
-      console.log('Data loaded successfully from API');
     } catch (error) {
-      console.error('Error fetching data:', error);
-      // Keep using localStorage data if API fails
-      setDataLoaded(true);
+      console.error('Critical error fetching data:', error);
+      setDataLoaded(true); // Still allow app to show (maybe using local data)
     } finally {
       setLoading(false);
     }
@@ -95,14 +86,22 @@ const App: React.FC = () => {
     // Check if user is already logged in
     const token = localStorage.getItem('token');
     if (token) {
+      console.log('Found token, verifying session...');
       // Verify token and get user profile
       authAPI.getProfile()
         .then(response => {
-          setCurrentUser(response.data);
-          // Fetch all data from API after successful login
-          fetchAllData();
+          if (response.data && response.data.id && response.data.role) {
+            console.log('Session verified for:', response.data.username);
+            setCurrentUser(response.data);
+            fetchAllData();
+          } else {
+            console.error('Invalid profile data received:', response.data);
+            localStorage.removeItem('token');
+            setDataLoaded(true);
+          }
         })
-        .catch(() => {
+        .catch(err => {
+          console.error('Session verification failed:', err.message);
           localStorage.removeItem('token');
           setDataLoaded(true);
         });

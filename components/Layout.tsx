@@ -96,16 +96,16 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
         <header className="px-5 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 sticky top-0 print:hidden">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-blue-200">
-              <span className="font-bold text-lg">{user.name.charAt(0)}</span>
+              <span className="font-bold text-lg">{user?.name?.charAt(0) || 'U'}</span>
             </div>
             <div>
-              <h1 className="text-sm font-bold text-slate-800 leading-tight truncate max-w-[150px]">{user.name}</h1>
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{user.role}</p>
+              <h1 className="text-sm font-bold text-slate-800 leading-tight truncate max-w-[150px]">{user?.name || 'User'}</h1>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{user?.role || 'Guest'}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button className="p-2 text-slate-400 bg-slate-50 rounded-xl hover:bg-slate-100"><Bell size={20} /></button>
-            <button onClick={onLogout} className="p-2 text-red-400 bg-red-50 rounded-xl hover:bg-red-100"><LogOut size={20} /></button>
+            <button className="p-2 text-slate-400 bg-slate-50 rounded-xl hover:bg-slate-100" aria-label="Notifications"><Bell size={20} /></button>
+            <button onClick={onLogout} className="p-2 text-red-400 bg-red-50 rounded-xl hover:bg-red-100" aria-label="Logout"><LogOut size={20} /></button>
           </div>
         </header>
 
@@ -224,12 +224,12 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
         <div className="p-4 border-t border-slate-100">
           <div className={`flex items-center p-3 mb-4 rounded-2xl bg-slate-50 ${isCollapsed ? 'justify-center' : ''}`}>
             <div className="w-10 h-10 min-w-[40px] rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold border-2 border-white shadow-sm">
-              {user.name.charAt(0)}
+              {user?.name?.charAt(0) || 'U'}
             </div>
             {!isCollapsed && (
               <div className="ml-3 overflow-hidden">
-                <p className="text-sm font-black text-slate-800 truncate">{user.name}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase">{user.role}</p>
+                <p className="text-sm font-black text-slate-800 truncate">{user?.name || 'User'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">{user?.role || 'Guest'}</p>
               </div>
             )}
           </div>
