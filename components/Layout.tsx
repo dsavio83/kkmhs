@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LogOut, LayoutDashboard, Users, BookOpen, 
+import {
+  LogOut, LayoutDashboard, Users, BookOpen,
   GraduationCap, ClipboardList, BarChart3, Settings,
   ChevronLeft, ChevronRight, Menu, Bell, FileSpreadsheet,
   FolderOpen, UserCog, Building, Layers, Database
@@ -42,12 +42,14 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
       { icon: <LayoutDashboard size={22} />, label: 'Dashboard', path: '/teacher' },
       { icon: <Layers size={22} />, label: 'My Classes', path: '/teacher/classes' },
       { icon: <Users size={22} />, label: 'Students', path: '/teacher/students' },
+      { icon: <ClipboardList size={22} />, label: 'Mark Entry', path: '/teacher/section-marks' },
       { icon: <FileSpreadsheet size={22} />, label: 'Exams', path: '/teacher/exams' },
       { icon: <BarChart3 size={22} />, label: 'Reports', path: '/teacher/reports' },
     ],
     [UserRole.STUDENT]: [
       { icon: <LayoutDashboard size={22} />, label: 'Dashboard', path: '/student' },
       { icon: <BookOpen size={22} />, label: 'Courses', path: '/student/courses' },
+      { icon: <ClipboardList size={22} />, label: 'Submit Marks', path: '/student/submit-marks' },
       { icon: <BarChart3 size={22} />, label: 'Grades', path: '/student/grades' },
     ]
   };
@@ -55,16 +57,32 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
   // Logic to fetch Teacher's Classes (Still used for desktop sidebar quick links)
   let teacherClasses: any[] = [];
   if (user.role === UserRole.TEACHER && appState) {
-    const myFormClasses = appState.classes.filter((c: any) => c.classTeacherId === user.id);
-    const mySubjectAssignments = appState.assignments.filter((a: any) => a.teacherId === user.id);
-    
+    const myFormClasses = appState.classes.filter((c: any) =>
+      (typeof c.classTeacherId === 'object' ? c.classTeacherId.id : c.classTeacherId) === user.id
+    );
+    // Note: assignments might not be populated in appState if not fetched. 
+    // The current appState in App.tsx doesn't seem to fetch assignments explicitly from an API endpoint, 
+    // but relies on what's locally stored or assumes they are part of something else.
+    // However, checking App.tsx, assignments are part of default state but not fetched in fetchAllData.
+    // We need to rely on what we have. If assignments are key for this, they must be fetched.
+    // Assuming assignments are available or we need to derive them.
+
+    // Actually, looking at App.tsx, assignments are NOT fetched from API. This is a problem.
+    // But wait, the user says "Class assing and subject teachers assing and save properly show the admin panel".
+    // This implies the data exists in the backend. 
+    // In the frontend, we need to fetch assignments to know what classes a teacher has.
+
+    // Let's first fix the ID comparison for classTeacherId.
+
+    const mySubjectAssignments = appState.assignments ? appState.assignments.filter((a: any) => a.teacherId === user.id) : [];
+
     const classMap = new Map();
     // Add form classes first
     myFormClasses.forEach((c: any) => classMap.set(c.id, c));
     // Add subject classes
     mySubjectAssignments.forEach((a: any) => {
-        const cls = appState.classes.find((c: any) => c.id === a.classId);
-        if(cls) classMap.set(cls.id, cls);
+      const cls = appState.classes.find((c: any) => c.id === a.classId);
+      if (cls) classMap.set(cls.id, cls);
     });
     teacherClasses = Array.from(classMap.values());
   }
@@ -75,7 +93,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
     return (
       <div className="flex flex-col h-screen bg-white overflow-hidden safe-top safe-bottom">
         {/* Mobile Header */}
-        <header className="px-5 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 sticky top-0">
+        <header className="px-5 py-4 flex justify-between items-center bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 sticky top-0 print:hidden">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-lg shadow-blue-200">
               <span className="font-bold text-lg">{user.name.charAt(0)}</span>
@@ -97,16 +115,15 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
         </main>
 
         {/* Mobile Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-2 py-2 flex justify-around items-center z-50 safe-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 px-2 py-2 flex justify-around items-center z-50 safe-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.04)] print:hidden">
           {currentMenu.slice(0, 5).map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-300 btn-active ${
-                  isActive ? 'text-blue-600 bg-blue-50/50' : 'text-slate-400 hover:text-slate-600'
-                }`}
+                className={`flex flex-col items-center justify-center py-2 px-4 rounded-2xl transition-all duration-300 btn-active ${isActive ? 'text-blue-600 bg-blue-50/50' : 'text-slate-400 hover:text-slate-600'
+                  }`}
               >
                 <span className={`${isActive ? 'scale-110' : ''} transition-transform duration-300`}>{item.icon}</span>
                 <span className={`text-[10px] mt-1 font-bold ${isActive ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
@@ -121,8 +138,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Desktop Sidebar */}
-      <aside 
-        className={`${isCollapsed ? 'w-24' : 'w-72'} bg-white border-r border-slate-200 flex flex-col transition-all duration-500 ease-in-out relative z-30 shadow-sm`}
+      <aside
+        className={`${isCollapsed ? 'w-24' : 'w-72'} bg-white border-r border-slate-200 flex flex-col transition-all duration-500 ease-in-out relative z-30 shadow-sm print:hidden`}
       >
         <div className={`p-8 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!isCollapsed && (
@@ -147,11 +164,10 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`flex items-center w-full px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
-                  isActive 
-                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-200/50 scale-[1.02]' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'
-                }`}
+                className={`flex items-center w-full px-4 py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                  ? 'bg-blue-600 text-white shadow-xl shadow-blue-200/50 scale-[1.02]'
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-blue-600'
+                  }`}
               >
                 <span className={`${isCollapsed ? '' : 'mr-4'} ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`}>
                   {item.icon}
@@ -160,48 +176,48 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
               </button>
             );
           })}
-          
+
           {/* Teacher's Classes Section - Desktop Quick Links */}
           {user.role === UserRole.TEACHER && teacherClasses.length > 0 && (
-             <div className="mt-8">
-                 {!isCollapsed && <p className="px-4 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Quick Access</p>}
-                 {teacherClasses.map((cls) => {
-                     const path = `/teacher/class/${cls.id}`;
-                     const isActive = location.pathname === path;
-                     const isClassTeacher = cls.classTeacherId === user.id;
+            <div className="mt-8">
+              {!isCollapsed && <p className="px-4 text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Quick Access</p>}
+              {teacherClasses.map((cls) => {
+                const path = `/teacher/class/${cls.id}`;
+                const isActive = location.pathname === path;
+                const isClassTeacher = cls.classTeacherId === user.id;
 
-                     let bgClass = '';
-                     let textClass = '';
-                     
-                     if (isActive) {
-                        bgClass = 'bg-indigo-600 shadow-xl shadow-indigo-200/50 scale-[1.02]';
-                        textClass = 'text-white';
-                     } else {
-                        bgClass = 'hover:bg-slate-50';
-                        textClass = isClassTeacher 
-                            ? 'text-blue-700 hover:text-blue-800' 
-                            : 'text-slate-700 hover:text-slate-900';
-                     }
+                let bgClass = '';
+                let textClass = '';
 
-                     return (
-                        <button
-                            key={cls.id}
-                            onClick={() => navigate(path)}
-                            className={`flex items-center w-full px-4 py-3.5 rounded-2xl transition-all duration-300 group ${bgClass} ${textClass}`}
-                        >
-                            <span className={`${isCollapsed ? '' : 'mr-4'} ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`}>
-                                {isClassTeacher ? <UserCog size={20} /> : <FolderOpen size={20} />}
-                            </span>
-                            {!isCollapsed && (
-                                <div className="text-left">
-                                    <span className="text-sm font-bold tracking-tight block">Class {cls.name}</span>
-                                    {isClassTeacher && <span className="text-[9px] uppercase tracking-widest opacity-70">Class Teacher</span>}
-                                </div>
-                            )}
-                        </button>
-                     )
-                 })}
-             </div>
+                if (isActive) {
+                  bgClass = 'bg-indigo-600 shadow-xl shadow-indigo-200/50 scale-[1.02]';
+                  textClass = 'text-white';
+                } else {
+                  bgClass = 'hover:bg-slate-50';
+                  textClass = isClassTeacher
+                    ? 'text-blue-700 hover:text-blue-800'
+                    : 'text-slate-700 hover:text-slate-900';
+                }
+
+                return (
+                  <button
+                    key={cls.id}
+                    onClick={() => navigate(path)}
+                    className={`flex items-center w-full px-4 py-3.5 rounded-2xl transition-all duration-300 group ${bgClass} ${textClass}`}
+                  >
+                    <span className={`${isCollapsed ? '' : 'mr-4'} ${isActive ? 'scale-110' : 'group-hover:scale-110'} transition-transform duration-300`}>
+                      {isClassTeacher ? <UserCog size={20} /> : <FolderOpen size={20} />}
+                    </span>
+                    {!isCollapsed && (
+                      <div className="text-left">
+                        <span className="text-sm font-bold tracking-tight block">Class {cls.name}</span>
+                        {isClassTeacher && <span className="text-[9px] uppercase tracking-widest opacity-70">Class Teacher</span>}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           )}
         </nav>
 
@@ -227,7 +243,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
         </div>
 
         {/* Toggle Collapse Button */}
-        <button 
+        <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="absolute -right-3 top-20 bg-white border border-slate-200 rounded-full p-1 text-slate-400 hover:text-blue-600 shadow-sm z-50 transition-all hover:scale-110"
         >
@@ -236,8 +252,8 @@ const Layout: React.FC<LayoutProps> = ({ children, user, appState, onLogout }) =
       </aside>
 
       {/* Desktop Main Content */}
-      <main className="flex-1 overflow-y-auto relative bg-slate-50/30">
-        <div className="max-w-6xl mx-auto py-10 px-8 animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
+      <main className="flex-1 overflow-y-auto relative bg-slate-50/30 print:bg-white print:overflow-visible">
+        <div className="max-w-6xl mx-auto py-10 px-8 animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out print:p-0 print:max-w-none">
           {children}
         </div>
       </main>

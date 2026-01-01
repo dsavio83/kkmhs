@@ -5,15 +5,21 @@ import { User, UserRole, ClassRoom, Subject, GradeScheme, GradeBoundary } from '
 import {
     Plus, Edit2, Trash2, Search, Filter,
     MoreVertical, CheckCircle2, UserPlus, BookOpen,
-    Settings, GraduationCap, X, Save, Users, Layers, Upload, Building, AlertCircle, Download, Database, RefreshCw
+    Settings, GraduationCap, X, Save, Users, Layers, Upload, Building, AlertCircle, Download, Database, RefreshCw, Loader2
 } from 'lucide-react';
 import { saveAppState, clearAppState } from '../store';
-import { userAPI, classAPI, subjectAPI } from '../services/api';
+import { userAPI, classAPI, subjectAPI, gradeAPI, schoolAPI } from '../services/api';
 
 interface AdminDashboardProps {
     state: any;
     setState: any;
 }
+
+const getId = (obj: any) => {
+    if (!obj) return '';
+    if (typeof obj === 'string') return obj;
+    return obj.id || obj._id || '';
+};
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
     const location = useLocation();
@@ -38,6 +44,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
 
     // State for Grade Editing
     const [editingGradeScheme, setEditingGradeScheme] = useState<GradeScheme | null>(null);
+
+    // Loading states for save and delete operations
+    const [isSaving, setIsSaving] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    // State for Class Statistics (subject counts)
+    const [classStats, setClassStats] = useState<{ [key: string]: { subjectCount: number } }>({});
+
+    // Fetch class statistics when classes change or tab becomes active
+    useEffect(() => {
+        if (activeTab === 'classes' && state.classes.length > 0) {
+            const fetchStats = async () => {
+                const stats: any = {};
+                await Promise.all(state.classes.map(async (c: any) => {
+                    try {
+                        const response = await classAPI.getSubjects(c.id);
+                        stats[c.id] = { subjectCount: response.data.length };
+                    } catch (e) {
+                        console.error(`Failed to fetch stats for class ${c.id}`, e);
+                        stats[c.id] = { subjectCount: 0 };
+                    }
+                }));
+                setClassStats(stats);
+            };
+            fetchStats();
+        }
+    }, [activeTab, state.classes]);
 
     useEffect(() => {
         if (toast) {
@@ -144,47 +177,64 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
     };
 
     // --- CSV Import Teachers (Existing) ---
+    // --- CSV Import Teachers (Existing) ---
     const handleImportTeachers = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        setIsSaving(true);
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
             try {
                 const text = event.target?.result as string;
                 const lines = text.split('\n');
-                const newTeachers: User[] = [];
-
                 const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                showToast(`Importing ${lines.length - startIndex} teachers...`, 'success');
 
                 for (let i = startIndex; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (!line) continue;
 
                     const cols = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim());
-
                     if (cols.length < 2) continue;
 
-                    newTeachers.push({
-                        id: Math.random().toString(36).substr(2, 9),
-                        role: UserRole.TEACHER,
+                    const teacherData = {
                         name: cols[0],
                         username: cols[1],
                         password: cols[2] || '123456',
                         mobile: cols[3] || '',
                         email: cols[4] || '',
-                        dob: cols[5] || ''
-                    });
+                        dob: cols[5] || '',
+                        role: UserRole.TEACHER
+                    };
+
+                    try {
+                        const response = await userAPI.create(teacherData);
+                        const savedTeacher = response.data;
+                        setState((prev: any) => ({
+                            ...prev,
+                            users: [...prev.users.filter((u: any) => u.id !== savedTeacher.id), savedTeacher]
+                        }));
+                        successCount++;
+                    } catch (err) {
+                        console.error('Failed to import teacher:', teacherData.name, err);
+                        errorCount++;
+                    }
                 }
 
-                if (newTeachers.length > 0) {
-                    setState((prev: any) => ({ ...prev, users: [...prev.users, ...newTeachers] }));
-                    showToast(`Successfully imported ${newTeachers.length} teachers.`, 'success');
-                } else {
-                    showToast('No valid data found in CSV.', 'error');
+                if (successCount > 0) {
+                    showToast(`Successfully imported ${successCount} teachers.${errorCount > 0 ? ` (${errorCount} failed)` : ''}`, 'success');
+                } else if (errorCount > 0) {
+                    showToast(`Failed to import teachers. Check console for details.`, 'error');
                 }
             } catch (error) {
                 showToast('Failed to import CSV.', 'error');
+            } finally {
+                setIsSaving(false);
             }
         };
         reader.readAsText(file);
@@ -195,17 +245,72 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
 
     const handleSaveTeacher = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Client-side validation
+        const formData = new FormData(e.target as HTMLFormElement);
+        const name = formData.get('name') as string;
+        const username = formData.get('username') as string;
+        const password = formData.get('password') as string;
+        const mobile = formData.get('mobile') as string;
+        const email = formData.get('email') as string;
+
+        // Validate required fields
+        if (!name || name.trim() === '') {
+            alert('❌ Name is required!');
+            return;
+        }
+        if (!username || username.trim() === '') {
+            alert('❌ Username is required!');
+            return;
+        }
+
+        // Validate password for new teachers or when password is provided
+        if (!editingItem && (!password || password.trim() === '')) {
+            alert('❌ Password is required for new teachers!');
+            return;
+        }
+        if (password && password.trim() !== '') {
+            if (password.length < 2) {
+                alert('❌ Password must be at least 2 characters long!');
+                return;
+            }
+        }
+
+        // Validate mobile if provided
+        if (mobile && mobile.trim() !== '' && !/^\d{10}$/.test(mobile)) {
+            alert('❌ Mobile number must be exactly 10 digits!');
+            return;
+        }
+
+        // Validate email if provided
+        if (email && email.trim() !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('❌ Please enter a valid email address!');
+            return;
+        }
+
+        setIsSaving(true);
         try {
-            const formData = new FormData(e.target as HTMLFormElement);
-            const teacherData = {
-                name: formData.get('name') as string,
-                username: formData.get('username') as string,
-                password: formData.get('password') as string || '123456',
-                mobile: formData.get('mobile') as string,
-                email: formData.get('email') as string,
-                dob: formData.get('dob') as string,
+            const teacherData: any = {
+                name: name.trim(),
+                username: username.trim(),
                 role: UserRole.TEACHER
             };
+
+            // Only include optional fields if they have values
+            if (mobile && mobile.trim() !== '') {
+                teacherData.mobile = mobile.trim();
+            }
+            if (email && email.trim() !== '') {
+                teacherData.email = email.trim();
+            }
+            if (formData.get('dob')) {
+                teacherData.dob = formData.get('dob') as string;
+            }
+
+            // Only include password if it's provided (for create or update)
+            if (password && password.trim() !== '') {
+                teacherData.password = password.trim();
+            }
 
             if (editingItem) {
                 // Update existing teacher
@@ -214,7 +319,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     ...prev,
                     users: prev.users.map((u: any) => u.id === editingItem.id ? response.data : u)
                 }));
-                showToast('Teacher updated', 'success');
+
+                // Show different message based on whether password was updated
+                if (password && password.trim() !== '') {
+                    showToast('✅ Teacher updated successfully! Password changed.', 'success');
+                } else {
+                    showToast('✅ Teacher updated successfully! Password unchanged.', 'success');
+                }
             } else {
                 // Create new teacher
                 const response = await userAPI.create(teacherData);
@@ -222,23 +333,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     ...prev,
                     users: [...prev.users, response.data]
                 }));
-                showToast('Teacher added', 'success');
+                showToast('✅ Teacher added successfully!', 'success');
             }
             setShowModal(false);
             setEditingItem(null);
         } catch (error: any) {
             console.error('Failed to save teacher:', error);
-            showToast(error.response?.data?.message || 'Failed to save teacher', 'error');
+            const errorMsg = error.response?.data?.message || 'Failed to save teacher';
+            const details = error.response?.data?.details;
+            if (details && details.length > 0) {
+                alert(`❌ Validation Error:\n\n${details.join('\n')}`);
+            } else {
+                alert(`❌ Error: ${errorMsg}`);
+            }
+            showToast(errorMsg, 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleSaveSubject = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Client-side validation
+        const formData = new FormData(e.target as HTMLFormElement);
+        const name = formData.get('name') as string;
+        const shortCode = formData.get('shortCode') as string;
+
+        if (!name || name.trim() === '') {
+            alert('❌ Subject name is required!');
+            return;
+        }
+
+        setIsSaving(true);
         try {
-            const formData = new FormData(e.target as HTMLFormElement);
             const subData = {
-                name: formData.get('name') as string,
-                shortCode: (formData.get('shortCode') as string).toUpperCase(),
+                name: name.trim(),
+                shortCode: shortCode?.toUpperCase() || '',
             };
 
             if (editingItem) {
@@ -248,7 +379,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     ...prev,
                     subjects: prev.subjects.map((s: any) => s.id === editingItem.id ? response.data : s)
                 }));
-                showToast('Subject updated', 'success');
+                showToast('✅ Subject updated successfully!', 'success');
             } else {
                 // Create new subject
                 const response = await subjectAPI.create(subData);
@@ -256,30 +387,47 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     ...prev,
                     subjects: [...prev.subjects, response.data]
                 }));
-                showToast('Subject added', 'success');
+                showToast('✅ Subject added successfully!', 'success');
             }
             setShowModal(false);
             setEditingItem(null);
         } catch (error: any) {
             console.error('Failed to save subject:', error);
-            showToast(error.response?.data?.message || 'Failed to save subject', 'error');
+            const errorMsg = error.response?.data?.message || 'Failed to save subject';
+            const details = error.response?.data?.details;
+            if (details && details.length > 0) {
+                alert(`❌ Validation Error:\n\n${details.join('\n')}`);
+            } else {
+                alert(`❌ Error: ${errorMsg}`);
+            }
+            showToast(errorMsg, 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const handleSaveClass = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            const formData = new FormData(e.target as HTMLFormElement);
-            const gradeLevel = formData.get('gradeLevel') as string;
-            const section = (formData.get('section') as string).toUpperCase();
-            const name = `${gradeLevel}-${section}`;
-            const classTeacherId = formData.get('classTeacherId') as string;
 
+        // Client-side validation
+        const formData = new FormData(e.target as HTMLFormElement);
+        const gradeLevel = formData.get('gradeLevel') as string;
+        const section = (formData.get('section') as string);
+        const classTeacherId = formData.get('classTeacherId') as string;
+
+        // Validate required fields
+        if (!section || section.trim() === '') {
+            alert('❌ Section is required!');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
             const classData = {
-                name,
+                name: `${gradeLevel}-${section.toUpperCase()}`,
                 gradeLevel,
-                section,
-                classTeacherId,
+                section: section.toUpperCase(),
+                classTeacherId: classTeacherId || undefined,
                 subjects: Object.keys(selectedSubjects).map(subjectId => ({
                     subjectId,
                     teacherId: selectedSubjects[subjectId]
@@ -293,7 +441,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     ...prev,
                     classes: prev.classes.map((c: any) => c.id === editingItem.id ? response.data : c)
                 }));
-                showToast('Class updated', 'success');
+                showToast('✅ Class updated successfully!', 'success');
             } else {
                 // Create new class
                 const response = await classAPI.create(classData);
@@ -301,59 +449,102 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                     ...prev,
                     classes: [...prev.classes, response.data]
                 }));
-                showToast('Class created', 'success');
+                showToast('✅ Class created successfully!', 'success');
             }
 
             setShowModal(false);
             setEditingItem(null);
         } catch (error: any) {
             console.error('Failed to save class:', error);
-            showToast(error.response?.data?.message || 'Failed to save class', 'error');
+            const errorMsg = error.response?.data?.message || 'Failed to save class';
+            const details = error.response?.data?.details;
+            if (details && details.length > 0) {
+                alert(`❌ Validation Error:\n\n${details.join('\n')}`);
+            } else {
+                alert(`❌ Error: ${errorMsg}`);
+            }
+            showToast(errorMsg, 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleSaveGradeScheme = (e: React.FormEvent) => {
+    const handleSaveGradeScheme = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!editingGradeScheme) return;
+
+        setIsSaving(true);
         try {
-            if (!editingGradeScheme) return;
             const validBoundaries = editingGradeScheme.boundaries.filter(b => b.grade.trim() !== '');
-            const newScheme = { ...editingGradeScheme, boundaries: validBoundaries };
+            const isExisting = editingGradeScheme.id && editingGradeScheme.id.length > 5;
 
-            setState((prev: any) => {
-                const exists = prev.gradeSchemes.find((s: any) => s.id === newScheme.id);
-                if (exists) {
-                    return { ...prev, gradeSchemes: prev.gradeSchemes.map((s: any) => s.id === newScheme.id ? newScheme : s) };
-                } else {
-                    return { ...prev, gradeSchemes: [...prev.gradeSchemes, newScheme] };
-                }
-            });
-            showToast('Grade scheme saved', 'success');
-            setShowModal(false); setEditingGradeScheme(null);
-        } catch (e) {
-            showToast('Failed to save grade scheme', 'error');
+            // Create a clean data object without the empty ID for new items
+            const { id, ...dataWithoutId } = editingGradeScheme;
+            const payload = {
+                ...dataWithoutId,
+                boundaries: validBoundaries,
+                // Ensure applicableClasses are trimmed and clean
+                applicableClasses: editingGradeScheme.applicableClasses.map(s => s.trim()).filter(s => s !== '')
+            };
+
+            let savedScheme;
+            if (isExisting) {
+                const response = await gradeAPI.update(editingGradeScheme.id, payload);
+                savedScheme = response.data;
+            } else {
+                const response = await gradeAPI.create(payload);
+                savedScheme = response.data;
+            }
+
+            setState((prev: any) => ({
+                ...prev,
+                gradeSchemes: isExisting
+                    ? prev.gradeSchemes.map((s: any) => s.id === savedScheme.id ? savedScheme : s)
+                    : [...prev.gradeSchemes, savedScheme]
+            }));
+
+            showToast(`✅ Grade scheme ${isExisting ? 'updated' : 'added'} successfully!`, 'success');
+            setShowModal(false);
+            setEditingGradeScheme(null);
+        } catch (error: any) {
+            console.error('Failed to save grade scheme:', error);
+            const msg = error.response?.data?.message || 'Failed to save grade scheme';
+            showToast(`❌ Error: ${msg}`, 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const handleSaveSchoolDetails = (e: React.FormEvent) => {
+    const handleSaveSchoolDetails = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSaving(true);
         try {
             const formData = new FormData(e.target as HTMLFormElement);
+            const reportLanguages = Array.from(formData.getAll('reportLanguages')) as string[];
             const details = {
-                name: formData.get('name') as string,
-                place: formData.get('place') as string,
-                schoolCode: formData.get('schoolCode') as string,
-                headMasterName: formData.get('headMasterName') as string,
-                address: formData.get('address') as string,
+                name: (formData.get('name') as string).trim(),
+                place: (formData.get('place') as string).trim(),
+                schoolCode: (formData.get('schoolCode') as string).trim(),
+                headMasterName: (formData.get('headMasterName') as string).trim(),
+                address: (formData.get('address') as string).trim(),
+                reportLanguages
             };
-            setState((prev: any) => ({ ...prev, schoolDetails: details }));
-            showToast('School details updated!', 'success');
-        } catch (e) {
-            showToast('Failed to update details', 'error');
+
+            const response = await schoolAPI.update(details);
+            setState((prev: any) => ({ ...prev, schoolDetails: response.data }));
+            showToast('School details updated successfully!', 'success');
+        } catch (error: any) {
+            console.error('Failed to update school details:', error);
+            showToast('Failed to update school details', 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
     const deleteItem = async (type: 'users' | 'classes' | 'subjects' | 'gradeSchemes', id: string) => {
-        if (!confirm('Are you sure? This action cannot be undone.')) return;
+        if (!confirm('⚠️ Are you sure? This action cannot be undone.')) return;
+
+        setDeletingId(id);
         try {
             // Delete from API
             if (type === 'users') {
@@ -362,28 +553,66 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                 await classAPI.delete(id);
             } else if (type === 'subjects') {
                 await subjectAPI.delete(id);
+            } else if (type === 'gradeSchemes') {
+                await gradeAPI.delete(id);
             }
 
             // Update local state
             setState((prev: any) => {
-                const newState = { ...prev, [type]: prev[type].filter((item: any) => item.id !== id) };
-                // Cascade delete for classes: remove students and assignments
-                if (type === 'classes') {
-                    newState.users = newState.users.filter((u: any) => u.classId !== id);
-                    newState.assignments = newState.assignments.filter((a: any) => a.classId !== id);
-                    newState.exams = newState.exams.filter((e: any) => e.classId !== id);
+                const newState = { ...prev };
+                if (type === 'users') {
+                    newState.users = prev.users.filter((u: any) => u.id !== id);
+                } else if (type === 'classes') {
+                    newState.classes = prev.classes.filter((c: any) => c.id !== id);
+                    newState.assignments = prev.assignments.filter((a: any) => a.classId !== id);
+                    newState.exams = prev.exams.filter((e: any) => e.classId !== id);
+                } else if (type === 'subjects') {
+                    newState.subjects = prev.subjects.filter((s: any) => s.id !== id);
+                    newState.assignments = prev.assignments.filter((a: any) => a.subjectId !== id);
+                } else if (type === 'gradeSchemes') {
+                    newState.gradeSchemes = prev.gradeSchemes.filter((g: any) => g.id !== id);
                 }
                 return newState;
             });
-            showToast('Item deleted successfully', 'success');
+            showToast('✅ Item deleted successfully!', 'success');
         } catch (error: any) {
             console.error('Failed to delete item:', error);
-            showToast(error.response?.data?.message || 'Failed to delete item', 'error');
+            const errorMsg = error.response?.data?.message || 'Failed to delete item';
+            alert(`❌ Delete Error: ${errorMsg}`);
+            showToast(errorMsg, 'error');
+        } finally {
+            setDeletingId(null);
         }
     };
 
     // --- Render Helpers ---
 
+
+    // Fetch class subjects when editing a class
+    useEffect(() => {
+        if (activeTab === 'classes' && editingItem) {
+            const fetchSubjects = async () => {
+                try {
+                    const response = await classAPI.getSubjects(editingItem.id);
+                    const subjects = response.data;
+                    const mapping: any = {};
+                    subjects.forEach((s: any) => {
+                        // Handle populated or unpopulated IDs
+                        const subjectId = getId(s.subjectId);
+                        const teacherId = getId(s.teacherId);
+                        mapping[subjectId] = teacherId || '';
+                    });
+                    setSelectedSubjects(mapping);
+                } catch (error) {
+                    console.error('Failed to fetch class subjects', error);
+                    showToast('Failed to load class subjects', 'error');
+                }
+            };
+            fetchSubjects();
+        } else {
+            setSelectedSubjects({});
+        }
+    }, [editingItem, activeTab]);
 
     const renderSubjectMapping = () => {
         const teachers = state.users.filter((u: any) => u.role === UserRole.TEACHER);
@@ -428,10 +657,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                 >
                                     {teachers.length > 0 ? (
                                         teachers.map((t: any) => (
-                                            <option key={t.id} value={t.id}>{t.name}</option>
+                                            <option key={`teacher-${sub.id}-${t.id}`} value={t.id}>{t.name}</option>
                                         ))
                                     ) : (
-                                        <option key="no-teachers" value="">No teachers available</option>
+                                        <option key={`no-teachers-${sub.id}`} value="">No teachers available</option>
                                     )}
                                 </select>
                             )}
@@ -570,8 +799,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                             <input name="dob" type="date" defaultValue={editingItem?.dob} className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold" />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slate-500 uppercase">Password</label>
-                                            <input name="password" defaultValue={editingItem?.password} className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold" />
+                                            <label className="text-xs font-bold text-slate-500 uppercase">
+                                                Password {!editingItem && <span className="text-red-500">*</span>}
+                                            </label>
+                                            <input
+                                                name="password"
+                                                type="password"
+                                                placeholder={editingItem ? "Leave empty to keep current password" : "Enter password (min 2 characters)"}
+                                                className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold"
+                                            />
+                                            {editingItem ? (
+                                                <p className="text-[10px] text-blue-600 font-bold mt-1 flex items-center gap-1">
+                                                    <AlertCircle size={12} />
+                                                    Leave empty to keep current password, or enter new password (min 2 chars) to update
+                                                </p>
+                                            ) : (
+                                                <p className="text-[10px] text-slate-400 mt-1">Password must be at least 2 characters</p>
+                                            )}
                                         </div>
                                     </div>
                                 </>
@@ -584,7 +828,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                             <label className="text-xs font-bold text-slate-500 uppercase">Grade Level</label>
                                             <select name="gradeLevel" defaultValue={editingItem?.gradeLevel} className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold">
                                                 {['Pre-KG', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(g => (
-                                                    <option key={g} value={g}>{g}</option>
+                                                    <option key={`grade-${g}`} value={g}>{g}</option>
                                                 ))}
                                             </select>
                                         </div>
@@ -595,10 +839,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-slate-500 uppercase">Class Teacher</label>
-                                        <select name="classTeacherId" defaultValue={editingItem?.classTeacherId} className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold">
+                                        <select
+                                            name="classTeacherId"
+                                            defaultValue={
+                                                editingItem?.classTeacherId
+                                                    ? (typeof editingItem.classTeacherId === 'object' ? (editingItem.classTeacherId._id || editingItem.classTeacherId.id) : editingItem.classTeacherId)
+                                                    : ''
+                                            }
+                                            className="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 outline-none focus:border-blue-500 font-bold"
+                                        >
                                             <option key="select-teacher" value="">Select Teacher</option>
                                             {state.users.filter((u: any) => u.role === UserRole.TEACHER).map((t: any) => (
-                                                <option key={t.id} value={t.id}>{t.name}</option>
+                                                <option key={`class-teacher-${t.id}`} value={t.id}>{t.name}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -620,8 +872,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                             )}
 
                             <div className="pt-4">
-                                <button type="submit" className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200/50 hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center">
-                                    <Save size={20} className="mr-2" /> Save {activeTab.slice(0, -1)}
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-200/50 hover:bg-blue-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <Loader2 size={20} className="mr-2 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={20} className="mr-2" />
+                                            Save {activeTab.slice(0, -1)}
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </form>
@@ -641,7 +907,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                 </div>
                 {activeTab !== 'stats' && activeTab !== 'school' && activeTab !== 'data' && (
                     <button
-                        onClick={() => { setEditingItem(null); setEditingGradeScheme(null); setShowModal(true); }}
+                        onClick={() => {
+                            setEditingItem(null);
+                            if (activeTab === 'grades') {
+                                setEditingGradeScheme({
+                                    id: '',
+                                    name: '',
+                                    applicableClasses: [],
+                                    boundaries: [{ grade: 'A+', minPercent: 90 }, { grade: 'A', minPercent: 80 }]
+                                });
+                            } else {
+                                setEditingGradeScheme(null);
+                            }
+                            setShowModal(true);
+                        }}
                         className="px-6 py-3 bg-blue-600 text-white font-black rounded-2xl shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center"
                     >
                         <Plus size={18} className="mr-2" /> Add {activeTab === 'grades' ? 'Scheme' : activeTab.slice(0, -1)}
@@ -775,8 +1054,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                                         </td>
                                         <td className="px-6 py-4 text-xs font-bold text-slate-500">{t.mobile}<br />{t.email}</td>
                                         <td className="px-6 py-4 text-right">
-                                            <button onClick={() => { setEditingItem(t); setShowModal(true); }} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg mr-2"><Edit2 size={16} /></button>
-                                            <button onClick={() => deleteItem('users', t.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={16} /></button>
+                                            <button
+                                                onClick={() => { setEditingItem(t); setShowModal(true); }}
+                                                disabled={deletingId !== null}
+                                                className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => deleteItem('users', t.id)}
+                                                disabled={deletingId !== null}
+                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+                                            >
+                                                {deletingId === t.id ? (
+                                                    <Loader2 size={16} className="animate-spin" />
+                                                ) : (
+                                                    <Trash2 size={16} />
+                                                )}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -787,25 +1082,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
             )}
 
             {activeTab === 'classes' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {state.classes.map((c: any) => {
-                        const teacher = state.users.find((u: any) => u.id === c.classTeacherId);
-                        const studentCount = state.users.filter((u: any) => u.classId === c.id).length;
+                <div className="space-y-8">
+                    {['Pre-KG', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(grade => {
+                        const classesInGrade = state.classes.filter((c: any) => c.gradeLevel === grade);
+                        if (classesInGrade.length === 0) return null;
+
                         return (
-                            <div key={c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative group hover:shadow-lg transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-xl">
-                                        {c.name.substring(0, 2)}
-                                    </div>
-                                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button onClick={() => { setEditingItem(c); setShowModal(true); }} className="p-2 bg-slate-50 rounded-xl text-blue-500 hover:bg-blue-100"><Edit2 size={16} /></button>
-                                        <button onClick={() => deleteItem('classes', c.id)} className="p-2 bg-slate-50 rounded-xl text-red-500 hover:bg-red-100"><Trash2 size={16} /></button>
-                                    </div>
-                                </div>
-                                <h3 className="text-xl font-black text-slate-800">Class {c.name}</h3>
-                                <p className="text-sm font-bold text-slate-400 mb-4">{teacher?.name || 'No Teacher Assigned'}</p>
-                                <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-400 bg-slate-50 px-3 py-2 rounded-xl w-fit">
-                                    <Users size={14} /> {studentCount} Students
+                            <div key={`grade-group-${grade}`}>
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                    Grade {grade}
+                                    <div className="flex-1 h-px bg-slate-200"></div>
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {classesInGrade.map((c: any) => {
+                                        // Handle populated teacher object or ID string
+                                        const teacherName = typeof c.classTeacherId === 'object' && c.classTeacherId
+                                            ? c.classTeacherId.name
+                                            : (state.users.find((u: any) => u.id === c.classTeacherId)?.name || 'No Teacher Assigned');
+
+                                        const studentCount = state.users.filter((u: any) => u.role === UserRole.STUDENT && getId(u.classId) === c.id).length;
+                                        const subjectCount = classStats[c.id]?.subjectCount || 0;
+                                        return (
+                                            <div key={c.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative group hover:shadow-lg transition-all">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 font-bold text-xl">
+                                                        {c.name.replace('-', '')}
+                                                    </div>
+                                                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button onClick={() => { setEditingItem(c); setShowModal(true); }} className="p-2 bg-slate-50 rounded-xl text-blue-500 hover:bg-blue-100"><Edit2 size={16} /></button>
+                                                        <button onClick={() => deleteItem('classes', c.id)} className="p-2 bg-slate-50 rounded-xl text-red-500 hover:bg-red-100"><Trash2 size={16} /></button>
+                                                    </div>
+                                                </div>
+                                                <h3 className="text-xl font-black text-slate-800">Class {c.name}</h3>
+                                                <p className="text-sm font-bold text-slate-400 mb-4">{teacherName}</p>
+                                                <div className="flex flex-wrap gap-2 text-xs font-black uppercase text-slate-400">
+                                                    <div className="bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-2">
+                                                        <Users size={14} /> {studentCount} Students
+                                                    </div>
+                                                    <div className="bg-slate-50 px-3 py-2 rounded-xl flex items-center gap-2">
+                                                        <BookOpen size={14} /> {subjectCount} Subjects
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );
@@ -832,30 +1153,41 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
 
             {activeTab === 'grades' && (
                 <div className="space-y-6">
-                    {state.gradeSchemes.map((scheme: any) => (
-                        <div key={scheme.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-800">{scheme.name}</h3>
-                                    <p className="text-sm font-bold text-slate-400 mt-1">
-                                        Applicable for Classes: {scheme.applicableClasses.join(', ')}
-                                    </p>
-                                </div>
-                                <div className="flex space-x-2">
-                                    <button onClick={() => { setEditingGradeScheme(scheme); setShowModal(true); }} className="p-2 bg-slate-50 rounded-xl text-blue-500 hover:bg-blue-100"><Edit2 size={16} /></button>
-                                    <button onClick={() => deleteItem('gradeSchemes', scheme.id)} className="p-2 bg-slate-50 rounded-xl text-red-500 hover:bg-red-100"><Trash2 size={16} /></button>
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap gap-3">
-                                {scheme.boundaries.map((b: any, idx: number) => (
-                                    <div key={idx} className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-200">
-                                        <span className="text-lg font-black text-blue-600">{b.grade}</span>
-                                        <span className="text-xs font-bold text-slate-400 ml-2">≥ {b.minPercent}%</span>
-                                    </div>
-                                ))}
-                            </div>
+                    {(!state.gradeSchemes || state.gradeSchemes.length === 0) ? (
+                        <div className="bg-white p-12 rounded-[3rem] text-center border-4 border-dashed border-slate-100 flex flex-col items-center justify-center">
+                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-600"><Layers size={24} /></div>
+                            <h3 className="text-xl font-black text-slate-800 mb-1">No Grade Schemes</h3>
+                            <p className="text-slate-400 font-bold">Click the "Add Scheme" button above to create one.</p>
                         </div>
-                    ))}
+                    ) : (
+                        state.gradeSchemes.map((scheme: any) => (
+                            <div key={scheme.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative group overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -mr-16 -mt-16 transition-all group-hover:scale-110"></div>
+                                <div className="flex justify-between items-start mb-6 relative z-10">
+                                    <div>
+                                        <h3 className="text-xl font-black text-slate-800">{scheme.name}</h3>
+                                        <p className="text-sm font-bold text-slate-400 mt-1 flex items-center gap-2">
+                                            <span className="inline-block w-2 h-2 rounded-full bg-blue-400"></span>
+                                            Applicable Classes: {scheme.applicableClasses.join(', ')}
+                                        </p>
+                                    </div>
+                                    <div className="flex space-x-2">
+                                        <button onClick={() => { setEditingGradeScheme(scheme); setShowModal(true); }} className="p-2 bg-white rounded-xl text-blue-500 border border-slate-100 hover:bg-blue-50 transition-colors"><Edit2 size={16} /></button>
+                                        <button onClick={() => deleteItem('gradeSchemes', scheme.id)} className="p-2 bg-white rounded-xl text-red-500 border border-slate-100 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-3 relative z-10">
+                                    {scheme.boundaries.map((b: any, idx: number) => (
+                                        <div key={idx} className="px-4 py-2 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-3">
+                                            <span className="text-xl font-black text-blue-600">{b.grade}</span>
+                                            <div className="w-px h-6 bg-slate-200"></div>
+                                            <span className="text-xs font-bold text-slate-400">≥ {b.minPercent}%</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             )}
 
@@ -889,6 +1221,23 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ state, setState }) => {
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
                             <textarea name="address" rows={3} defaultValue={state.schoolDetails?.address} className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 outline-none focus:border-blue-500 font-bold" />
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">AI Report Languages</label>
+                            <div className="flex flex-wrap gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                                {['English', 'Tamil', 'Malayalam'].map(lang => (
+                                    <label key={lang} className="flex items-center gap-2 cursor-pointer group">
+                                        <input
+                                            type="checkbox"
+                                            name="reportLanguages"
+                                            value={lang}
+                                            defaultChecked={state.schoolDetails?.reportLanguages?.includes(lang)}
+                                            className="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm font-bold text-slate-600 group-hover:text-blue-600 transition-colors">{lang}</span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                         <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black rounded-[2rem] shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                             Update School Details

@@ -18,7 +18,7 @@ const queryToParams = (paramName) => (req, res, next) => {
 };
 
 // Authentication Routes
-router.post('/auth/register', adminAuth, authController.registerUser);
+router.post('/auth/register', auth, teacherAuth, authController.registerUser);
 router.post('/auth/login', authController.loginUser);
 router.get('/auth/profile', auth, authController.getProfile);
 
@@ -41,10 +41,10 @@ router.get('/users', auth, (req, res, next) => {
 });
 router.get('/users/class/:classId', auth, userController.getStudentsByClass);
 router.get('/users/:id', auth, userController.getUserById);
-router.put('/users/:id', adminAuth, userController.updateUser);
-router.put('/users', adminAuth, queryToParams('id'), userController.updateUser);
-router.delete('/users/:id', adminAuth, userController.deleteUser);
-router.delete('/users', adminAuth, queryToParams('id'), userController.deleteUser);
+router.put('/users/:id', auth, teacherAuth, userController.updateUser);
+router.put('/users', auth, teacherAuth, queryToParams('id'), userController.updateUser);
+router.delete('/users/:id', auth, adminAuth, userController.deleteUser);
+router.delete('/users', auth, adminAuth, queryToParams('id'), userController.deleteUser);
 
 // Class Routes - Support both URL params and query params
 router.get('/classes', auth, (req, res, next) => {
@@ -61,13 +61,14 @@ router.get('/classes', auth, (req, res, next) => {
 
     return classController.getAllClasses(req, res);
 });
+router.get('/classes/assignments/all', auth, classController.getAllAssignments);
 router.get('/classes/:id/subjects', auth, classController.getClassSubjects);
 router.get('/classes/:id', auth, classController.getClassById);
-router.post('/classes', adminAuth, classController.createClass);
-router.put('/classes/:id', adminAuth, classController.updateClass);
-router.put('/classes', adminAuth, queryToParams('id'), classController.updateClass);
-router.delete('/classes/:id', adminAuth, classController.deleteClass);
-router.delete('/classes', adminAuth, queryToParams('id'), classController.deleteClass);
+router.post('/classes', auth, adminAuth, classController.createClass);
+router.put('/classes/:id', auth, adminAuth, classController.updateClass);
+router.put('/classes', auth, adminAuth, queryToParams('id'), classController.updateClass);
+router.delete('/classes/:id', auth, adminAuth, classController.deleteClass);
+router.delete('/classes', auth, adminAuth, queryToParams('id'), classController.deleteClass);
 
 // Subject Routes - Support both URL params and query params
 router.get('/subjects', auth, (req, res, next) => {
@@ -81,11 +82,11 @@ router.get('/subjects', auth, (req, res, next) => {
     return subjectController.getAllSubjects(req, res);
 });
 router.get('/subjects/:id', auth, subjectController.getSubjectById);
-router.post('/subjects', adminAuth, subjectController.createSubject);
-router.put('/subjects/:id', adminAuth, subjectController.updateSubject);
-router.put('/subjects', adminAuth, queryToParams('id'), subjectController.updateSubject);
-router.delete('/subjects/:id', adminAuth, subjectController.deleteSubject);
-router.delete('/subjects', adminAuth, queryToParams('id'), subjectController.deleteSubject);
+router.post('/subjects', auth, adminAuth, subjectController.createSubject);
+router.put('/subjects/:id', auth, adminAuth, subjectController.updateSubject);
+router.put('/subjects', auth, adminAuth, queryToParams('id'), subjectController.updateSubject);
+router.delete('/subjects/:id', auth, adminAuth, subjectController.deleteSubject);
+router.delete('/subjects', auth, adminAuth, queryToParams('id'), subjectController.deleteSubject);
 
 // Exam Routes - Support both URL params and query params
 router.get('/exams', auth, (req, res, next) => {
@@ -104,11 +105,11 @@ router.get('/exams', auth, (req, res, next) => {
 });
 router.get('/exams/class/:classId', auth, examController.getExamsByClass);
 router.get('/exams/:id', auth, examController.getExamById);
-router.post('/exams', teacherAuth, examController.createExam);
-router.put('/exams/:id', teacherAuth, examController.updateExam);
-router.put('/exams', teacherAuth, queryToParams('id'), examController.updateExam);
-router.delete('/exams/:id', teacherAuth, examController.deleteExam);
-router.delete('/exams', teacherAuth, queryToParams('id'), examController.deleteExam);
+router.post('/exams', auth, teacherAuth, examController.createExam);
+router.put('/exams/:id', auth, teacherAuth, examController.updateExam);
+router.put('/exams', auth, teacherAuth, queryToParams('id'), examController.updateExam);
+router.delete('/exams/:id', auth, teacherAuth, examController.deleteExam);
+router.delete('/exams', auth, teacherAuth, queryToParams('id'), examController.deleteExam);
 
 // Mark Routes - Support both URL params and query params
 router.get('/marks', auth, (req, res, next) => {
@@ -133,11 +134,12 @@ router.get('/marks', auth, (req, res, next) => {
 router.get('/marks/exam/:examId', auth, markController.getMarksByExam);
 router.get('/marks/student/:studentId', auth, markController.getMarksByStudent);
 router.get('/marks/student/:studentId/exam/:examId', auth, markController.getMarksByStudentAndExam);
-router.post('/marks', teacherAuth, markController.createMark);
-router.put('/marks/:id', teacherAuth, markController.updateMark);
-router.put('/marks', teacherAuth, queryToParams('id'), markController.updateMark);
-router.delete('/marks/:id', teacherAuth, markController.deleteMark);
-router.delete('/marks', teacherAuth, queryToParams('id'), markController.deleteMark);
+router.post('/marks', auth, markController.createMark);
+router.put('/marks/:id', auth, markController.updateMark);
+router.put('/marks', auth, queryToParams('id'), markController.updateMark);
+router.post('/marks/:id/analyze', auth, markController.analyzeMarkWithAI);
+router.delete('/marks/:id', auth, teacherAuth, markController.deleteMark);
+router.delete('/marks', auth, teacherAuth, queryToParams('id'), markController.deleteMark);
 
 // Grade Scheme Routes - Support both URL params and query params
 const gradeSchemeController = require('../controllers/gradeSchemeController');
@@ -158,10 +160,22 @@ router.get('/grades', auth, (req, res, next) => {
 });
 router.get('/grades/class/:className', auth, gradeSchemeController.getGradeSchemesByClass);
 router.get('/grades/:id', auth, gradeSchemeController.getGradeSchemeById);
-router.post('/grades', adminAuth, gradeSchemeController.createGradeScheme);
-router.put('/grades/:id', adminAuth, gradeSchemeController.updateGradeScheme);
-router.put('/grades', adminAuth, queryToParams('id'), gradeSchemeController.updateGradeScheme);
-router.delete('/grades/:id', adminAuth, gradeSchemeController.deleteGradeScheme);
-router.delete('/grades', adminAuth, queryToParams('id'), gradeSchemeController.deleteGradeScheme);
+router.post('/grades', auth, adminAuth, gradeSchemeController.createGradeScheme);
+router.put('/grades/:id', auth, adminAuth, gradeSchemeController.updateGradeScheme);
+router.put('/grades', auth, adminAuth, queryToParams('id'), gradeSchemeController.updateGradeScheme);
+router.delete('/grades/:id', auth, adminAuth, gradeSchemeController.deleteGradeScheme);
+router.delete('/grades', auth, adminAuth, queryToParams('id'), gradeSchemeController.deleteGradeScheme);
+
+// Attendance Routes
+const attendanceController = require('../controllers/attendanceController');
+router.get('/attendance', auth, attendanceController.getAllAttendance);
+router.post('/attendance', auth, teacherAuth, attendanceController.upsertAttendance);
+router.delete('/attendance/:id', auth, teacherAuth, attendanceController.deleteAttendance);
+
+// School Routes
+const schoolController = require('../controllers/schoolController');
+router.get('/school', schoolController.getSchoolDetails);
+router.post('/school', auth, adminAuth, schoolController.updateSchoolDetails);
+router.put('/school', auth, adminAuth, schoolController.updateSchoolDetails);
 
 module.exports = router;

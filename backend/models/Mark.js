@@ -18,23 +18,46 @@ const markSchema = new mongoose.Schema({
   },
   teMark: {
     type: String,
-    required: [true, 'TE mark is required'],
+    default: '',
     validate: {
-      validator: function(v) {
-        return /^\d+(\.\d{1,2})?$/.test(v);
+      validator: function (v) {
+        return v === '' || /^\d+(\.\d{1,2})?$/.test(v) || v === 'A';
       },
-      message: 'TE mark must be a valid number'
+      message: 'TE mark must be a valid number or "A" for Absent'
     }
   },
   ceMark: {
     type: String,
-    required: [true, 'CE mark is required'],
+    default: '',
     validate: {
-      validator: function(v) {
-        return /^\d+(\.\d{1,2})?$/.test(v);
+      validator: function (v) {
+        return v === '' || /^\d+(\.\d{1,2})?$/.test(v) || v === 'A';
       },
-      message: 'CE mark must be a valid number'
+      message: 'CE mark must be a valid number or "A" for Absent'
     }
+  },
+  detailedMarks: [{
+    sectionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true
+    },
+    marks: {
+      type: Number,
+      required: true,
+      min: 0
+    }
+  }],
+  isLocked: {
+    type: Boolean,
+    default: false
+  },
+  aiAnalysis: {
+    type: String,
+    default: ''
+  },
+  aiAdvice: {
+    type: String,
+    default: ''
   },
   createdAt: {
     type: Date,
@@ -48,5 +71,16 @@ const markSchema = new mongoose.Schema({
 
 // Compound index to ensure unique marks per student per subject per exam
 markSchema.index({ studentId: 1, subjectId: 1, examId: 1 }, { unique: true });
+
+// Transform _id to id for frontend compatibility
+markSchema.set('toJSON', {
+  virtuals: true,
+  transform: function (doc, ret) {
+    ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  }
+});
 
 module.exports = mongoose.model('Mark', markSchema);
