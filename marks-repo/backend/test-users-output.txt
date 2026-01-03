@@ -1,0 +1,39 @@
+Testing MongoDB User Queries...
+
+Connected to MongoDB
+
+1. Getting all users...
+   Found 9 total users
+   Role breakdown: {
+  "ADMIN": 1,
+  "TEACHER": 3,
+  "STUDENT": 5
+}
+
+2. Getting teachers (role: TEACHER)...
+   Found 3 teachers
+   Teachers:
+   - John Teacher (teacher1) - ID: 6948bf2db3dc2295a9166389
+   - Jane Teacher (teacher2) - ID: 6948bf2db3dc2295a916638b
+   - Bob Teacher (teacher3) - ID: 6948bf2db3dc2295a916638d
+
+3. Getting students (role: STUDENT)...
+   Found 5 students
+
+4. Getting admins (role: ADMIN)...
+   Found 1 admins
+   Admins:
+   - Admin User (admin)
+
+5. All users in database:
+   - Admin User (admin) - Role: ADMIN
+   - John Teacher (teacher1) - Role: TEACHER
+   - Jane Teacher (teacher2) - Role: TEACHER
+   - Bob Teacher (teacher3) - Role: TEACHER
+   - Alice Student (student1) - Role: STUDENT
+   - Bob Student (student2) - Role: STUDENT
+   - Charlie Student (student3) - Role: STUDENT
+   - Diana Student (student4) - Role: STUDENT
+   - Eve Student (student5) - Role: STUDENT
+
+All tests completed!

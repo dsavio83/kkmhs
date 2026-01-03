@@ -657,10 +657,47 @@ const Reports: React.FC<ReportsProps> = ({ teacher, state }) => {
 
     const getGrade = useCallback((percent: number) => {
         if (isNaN(percent)) return '-';
+
+        // Hardcoded Logic for Class 5-8 and 9-10
+        let level = 0;
+        if (selectedClass && selectedClass.gradeLevel) {
+            // Extract number from grade string (e.g. "8", "Class 8", "VIII")
+            // Simple parsing to get the first number
+            const match = String(selectedClass.gradeLevel).match(/\d+/);
+            if (match) {
+                level = parseInt(match[0], 10);
+            }
+        }
+
+        // Scheme for 9 and 10
+        // A+: 90-100, A: 80-89, B+: 70-79, B: 60-69, C+: 50-59, C: 40-49, D+: 30-39, D: 20-29, E: <20
+        if (level === 9 || level === 10) {
+            if (percent >= 90) return 'A+';
+            if (percent >= 80) return 'A';
+            if (percent >= 70) return 'B+';
+            if (percent >= 60) return 'B';
+            if (percent >= 50) return 'C+';
+            if (percent >= 40) return 'C';
+            if (percent >= 30) return 'D+';
+            if (percent >= 20) return 'D';
+            return 'E';
+        }
+
+        // Scheme for 5 to 8
+        // A: >=80, B: 60-79, C: 40-59, D: 30-39, E: <30
+        if (level >= 5 && level <= 8) {
+            if (percent >= 80) return 'A';
+            if (percent >= 60) return 'B';
+            if (percent >= 40) return 'C';
+            if (percent >= 30) return 'D';
+            return 'E';
+        }
+
+        // Fallback to existing logic
         if (!applicableScheme || sortedBoundaries.length === 0) return '-';
         const boundary = sortedBoundaries.find((b: any) => percent >= b.minPercent);
         return boundary ? boundary.grade : 'F';
-    }, [applicableScheme, sortedBoundaries]);
+    }, [applicableScheme, sortedBoundaries, selectedClass]);
 
     // Process Data
     const reportData = useMemo(() => {
